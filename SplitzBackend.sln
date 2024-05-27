@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34916.146
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SplitzBackend", "SplitzBackend.csproj", "{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8BD99809-7928-4C33-BEC8-55748C185B2C}
+	EndGlobalSection
+EndGlobal
