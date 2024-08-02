@@ -7,18 +7,31 @@ public class SplitzUser: IdentityUser
 {
     [PersonalData]
     [Url]
-    [MaxLength(255)]
+    [MaxLength(256)]
     public string? Photo { get; set; }
-
-    [PersonalData]
-    public List<SplitzUser> Friends { get; set; } = new();
+    public List<Friend> Friends { get; set; } = new();
+    public List<Group> Groups { get; set; } = new();
 }
 
 public class SplitzUserDto
 {
     public required string Id { get; set; }
+    [MaxLength(256)]
     public string? UserName { get; set; }
-    public string? Email { get; set; }
+    [Url]
+    [MaxLength(256)]
     public string? Photo { get; set; }
-    public List<SplitzUserDto> Friends { get; set; } = new();
+    public List<FriendDto> Friends { get; set; } = new();
+    public List<Group> Groups { get; set; } = new();
+    public List<GroupBalance> Balances { get; set; } = new();
+}
+
+public class SplitzUserReducedDto
+{
+    public required string Id { get; set; }
+    [MaxLength(256)]
+    public string? UserName { get; set; }
+    [Url]
+    [MaxLength(256)]
+    public string? Photo { get; set; }
 }

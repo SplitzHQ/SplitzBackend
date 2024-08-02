@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
+using System.Reflection;
 
 namespace SplitzBackend;
 
@@ -26,14 +27,18 @@ public class Program
         builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(options =>
+        {
+            var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+        });
 
         var app = builder.Build();
 
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SplitzDbContext>();
-            //db.Database.EnsureDeleted();
+            // db.Database.EnsureDeleted();
             db.Database.EnsureCreated();
         }
 
