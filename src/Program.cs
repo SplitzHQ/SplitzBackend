@@ -1,6 +1,8 @@
+using System.Reflection;
+using AutoMapper;
+using AutoMapper.EquivalencyExpression;
 using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
-using System.Reflection;
 
 namespace SplitzBackend;
 
@@ -10,11 +12,13 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // configure database
         builder.Services.AddDbContext<SplitzDbContext>(options =>
         {
             options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite"));
         });
 
+        // configure identity
         builder.Services.AddAuthorization();
         builder.Services.AddIdentityApiEndpoints<SplitzUser>(option =>
             {
@@ -23,8 +27,11 @@ public class Program
             })
             .AddEntityFrameworkStores<SplitzDbContext>();
 
+        // configure routing and controllers
         builder.Services.AddControllers();
         builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
+
+        // configure swagger
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
@@ -32,6 +39,13 @@ public class Program
             var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
         });
+
+        // configure automapper
+        builder.Services.AddAutoMapper((serviceProvider, automapper) =>
+        {
+            automapper.AddCollectionMappers();
+            automapper.UseEntityFrameworkCoreModel<SplitzDbContext>(serviceProvider);
+        }, typeof(SplitzDbContext), typeof(MapperProfile));
 
         var app = builder.Build();
 

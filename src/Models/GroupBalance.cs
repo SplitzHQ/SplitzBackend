@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace SplitzBackend.Models;
 
@@ -20,8 +20,7 @@ public class GroupBalance
 
     public required decimal Balance { get; set; }
 
-    [MaxLength(16)]
-    public required string Currency { get; set; }
+    [MaxLength(16)] public required string Currency { get; set; }
 }
 
 public class GroupBalanceDto
@@ -34,6 +33,5 @@ public class GroupBalanceDto
 
     public required decimal Balance { get; set; }
 
-    [MaxLength(16)]
-    public required string Currency { get; set; }
+    [MaxLength(16)] public required string Currency { get; set; }
 }

@@ -10,11 +10,9 @@ public class Transaction
 
     public Group Group { get; set; } = null!;
 
-    [MaxLength(256)]
-    public required string Name { get; set; }
+    [MaxLength(256)] public required string Name { get; set; }
 
-    [MaxLength(256)]
-    public required string Icon { get; set; }
+    [MaxLength(256)] public required string Icon { get; set; }
 
     public required DateTime CreateTime { get; set; } = DateTime.Now;
 
@@ -22,17 +20,13 @@ public class Transaction
 
     public required decimal Amount { get; set; }
 
-    [MaxLength(16)]
-    public required string Currency { get; set; }
+    [MaxLength(16)] public required string Currency { get; set; }
 
     public required List<Tag> Tags { get; set; } = new();
 
-    [MaxLength(128)]
-    public string? GeoCoordinate { get; set; }
+    [MaxLength(128)] public string? GeoCoordinate { get; set; }
 
-    [Url]
-    [MaxLength(256)]
-    public string? Photo { get; set; }
+    [Url] [MaxLength(256)] public string? Photo { get; set; }
 
     public List<TransactionBalance> Balances { get; set; } = new();
 }
