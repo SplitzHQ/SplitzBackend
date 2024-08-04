@@ -37,3 +37,10 @@ public class GroupReducedDto
 
     [Url] [MaxLength(256)] public string? Photo { get; set; }
 }
+
+public class GroupInputDto
+{
+    [MaxLength(256)] public required string Name { get; set; }
+
+    [Url] [MaxLength(256)] public string? Photo { get; set; }
+}

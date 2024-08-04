@@ -2,25 +2,28 @@
 
 namespace SplitzBackend.Models;
 
-[PrimaryKey(nameof(TransactionDraftId), nameof(UserId))]
-public class TransactionDraftBalance
+public class TransactionDraftBalanceBase
 {
     public Guid TransactionDraftId { get; set; }
-
-    public TransactionDraft TransactionDraft { get; set; } = null!;
 
     public required string UserId { get; set; }
 
-    public SplitzUser User { get; set; } = null!;
-
-    public decimal? Balance { get; set; }
+    public decimal Balance { get; set; }
 }
 
-public class TransactionDraftBalanceDto
+[PrimaryKey(nameof(TransactionDraftId), nameof(UserId))]
+public class TransactionDraftBalance : TransactionDraftBalanceBase
 {
-    public Guid TransactionDraftId { get; set; }
+    public TransactionDraft TransactionDraft { get; set; } = null!;
 
+    public SplitzUser User { get; set; } = null!;
+}
+
+public class TransactionDraftBalanceDto : TransactionDraftBalanceBase
+{
     public required SplitzUserReducedDto User { get; set; }
+}
 
-    public decimal? Balance { get; set; }
+public class TransactionDraftBalanceInputDto : TransactionDraftBalanceBase
+{
 }

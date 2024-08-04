@@ -31,7 +31,7 @@ public class GroupController(
         if (user is null)
             return Unauthorized();
         var groups = db.Groups.Where(g => g.Members.Contains(user));
-        return Ok(mapper.ProjectTo<GroupDto>(groups));
+        return await mapper.ProjectTo<GroupDto>(groups).ToListAsync();
     }
 
     /// <summary>
@@ -53,29 +53,52 @@ public class GroupController(
             .FirstOrDefaultAsync();
         if (group is null)
             return NotFound();
-        return Ok(group);
+        return group;
+    }
+
+    /// <summary>
+    ///     Get the group transactions
+    /// </summary>
+    /// <param name="groupId"></param>
+    /// <returns></returns>
+    [HttpGet("{groupId}/transactions", Name = "GetGroupTransactions")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(200)]
+    public async Task<ActionResult<List<TransactionDto>>> GetGroupTransactions(Guid groupId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        var group = db.Groups.Where(g => g.Members.Contains(user) && g.GroupId == groupId);
+        if (await group.FirstOrDefaultAsync() is null)
+            return NotFound();
+        var transactions = group.SelectMany(g => g.Transactions);
+        return await mapper.ProjectTo<TransactionDto>(transactions).ToListAsync();
     }
 
     /// <summary>
     ///     Create a new group
     /// </summary>
-    /// <param name="group">group info</param>
+    /// <param name="groupInputDto">group info</param>
     /// <returns></returns>
-    [HttpPut(Name = "CreateGroup")]
+    [HttpPost(Name = "CreateGroup")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(200)]
-    public async Task<ActionResult<GroupDto>> Create(Group group)
+    public async Task<ActionResult<GroupDto>> Create(GroupInputDto groupInputDto)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
+        var group = mapper.Map<Group>(groupInputDto);
         group.Members = [user];
         group.Transactions = [];
         group.Balances = [];
         db.Groups.Add(group);
         await db.SaveChangesAsync();
-        return Ok(mapper.Map<GroupDto>(group));
+        return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
     }
 
     /// <summary>
@@ -88,7 +111,7 @@ public class GroupController(
     [ProducesResponseType(200)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
-    public async Task<ActionResult<GroupBalanceDto>> CreateGroupJoinLink(Guid groupId)
+    public async Task<ActionResult<GroupReducedDto>> CreateGroupJoinLink(Guid groupId)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
@@ -99,7 +122,8 @@ public class GroupController(
         var link = new GroupJoinLink { GroupId = groupId };
         db.GroupJoinLinks.Add(link);
         await db.SaveChangesAsync();
-        return Ok(mapper.Map<GroupBalanceDto>(link));
+        return CreatedAtAction(nameof(GetGroupInfoByLink), new { joinLinkId = link.GroupJoinLinkId },
+            mapper.Map<GroupReducedDto>(link));
     }
 
     /// <summary>
@@ -121,7 +145,7 @@ public class GroupController(
             .FirstOrDefaultAsync(e => e.GroupJoinLinkId == joinLinkId);
         if (groupJoinLink is null)
             return NotFound();
-        return Ok(mapper.Map<GroupReducedDto>(groupJoinLink.Group));
+        return mapper.Map<GroupReducedDto>(groupJoinLink.Group);
     }
 
     /// <summary>
@@ -145,6 +169,6 @@ public class GroupController(
             return NotFound();
         groupJoinLink.Group.Members.Add(user);
         await db.SaveChangesAsync();
-        return Ok(mapper.Map<GroupDto>(groupJoinLink.Group));
+        return mapper.Map<GroupDto>(groupJoinLink.Group);
     }
 }

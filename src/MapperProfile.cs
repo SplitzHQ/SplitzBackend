@@ -14,10 +14,15 @@ public class MapperProfile : Profile
         CreateMap<Group, GroupReducedDto>();
         CreateMap<GroupBalance, GroupBalanceDto>();
         CreateMap<GroupJoinLink, GroupBalanceDto>();
-        CreateMap<Tag, TagDto>();
         CreateMap<Transaction, TransactionDto>();
         CreateMap<TransactionBalance, TransactionBalanceDto>();
         CreateMap<TransactionDraft, TransactionDraftDto>();
         CreateMap<TransactionDraftBalance, TransactionDraftBalanceDto>();
+
+        CreateMap<GroupInputDto, Group>();
+        CreateMap<TransactionInputDto, Transaction>();
+        CreateMap<TransactionBalanceInputDto, TransactionBalance>();
+        CreateMap<TransactionDraftInputDto, TransactionDraft>();
+        CreateMap<TransactionDraftBalanceInputDto, TransactionDraftBalance>();
     }
 }

@@ -28,7 +28,7 @@ public class AccountController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        return Ok(mapper.Map<SplitzUserDto>(user));
+        return mapper.Map<SplitzUserDto>(user);
     }
 
     /// <summary>
@@ -37,7 +37,7 @@ public class AccountController(
     /// <param name="userDto">user info</param>
     /// <returns></returns>
     [HttpPatch(Name = "UpdateUserInfo")]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(204)]
     [ProducesResponseType(401)]
     public async Task<ActionResult> Update(SplitzUserUpdateViewModel userDto)
     {
@@ -49,7 +49,7 @@ public class AccountController(
         if (userDto.Photo is not null)
             user.Photo = userDto.Photo;
         await db.SaveChangesAsync();
-        return Ok();
+        return NoContent();
     }
 
     /// <summary>
@@ -58,8 +58,9 @@ public class AccountController(
     /// <param name="id">friend's id</param>
     /// <param name="remark">friend's remark</param>
     /// <returns></returns>
+    [HttpPost("friend/{id}", Name = "AddFriend")]
     [HttpPut("friend/{id}", Name = "AddFriend")]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(204)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
     public async Task<ActionResult> AddFriend(string id, [FromBody] string? remark)
@@ -70,6 +71,8 @@ public class AccountController(
         var friend = await userManager.FindByIdAsync(id);
         if (friend is null)
             return NotFound();
+        if (user.Friends.Any(f => f.FriendUserId == friend.Id && f.UserId == user.Id))
+            return NoContent();
         user.Friends.Add(new Friend
         {
             UserId = user.Id,
@@ -77,7 +80,7 @@ public class AccountController(
             Remark = remark
         });
         await db.SaveChangesAsync();
-        return Ok();
+        return NoContent();
     }
 
     /// <summary>
@@ -87,7 +90,7 @@ public class AccountController(
     /// <param name="remark">friend's new remark</param>
     /// <returns></returns>
     [HttpPatch("friend/{id}", Name = "UpdateFriendRemark")]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(204)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
@@ -107,7 +110,7 @@ public class AccountController(
 
         friendShip.Remark = remark;
         await db.SaveChangesAsync();
-        return Ok();
+        return NoContent();
     }
 
     /// <summary>
@@ -116,7 +119,7 @@ public class AccountController(
     /// <param name="id">friend's id</param>
     /// <returns></returns>
     [HttpDelete("friend/{id}", Name = "RemoveFriend")]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(204)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
     public async Task<ActionResult> RemoveFriend(string id)
@@ -133,7 +136,7 @@ public class AccountController(
 
         user.Friends.Remove(friendShip);
         await db.SaveChangesAsync();
-        return Ok();
+        return NoContent();
     }
 }
 
