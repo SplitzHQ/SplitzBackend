@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -6,8 +7,9 @@ using SplitzBackend.Models;
 
 namespace SplitzBackend.Controllers;
 
-[Route("api/[controller]")]
+[Authorize]
 [ApiController]
+[Route("[controller]")]
 public class TransactionController(
     SplitzDbContext context,
     UserManager<SplitzUser> userManager,
@@ -41,7 +43,7 @@ public class TransactionController(
     /// <summary>
     ///     Add a transaction
     /// </summary>
-    /// <param name="transaction"></param>
+    /// <param name="transactionInputDto"></param>
     /// <returns></returns>
     [HttpPost]
     [Produces("application/json")]
