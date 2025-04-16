@@ -9,6 +9,17 @@ public class SplitzUser : IdentityUser
 
     public List<Friend> Friends { get; set; } = new();
     public List<Group> Groups { get; set; } = new();
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not SplitzUser user) return false;
+        return Id == user.Id;
+    }
+
+    public override int GetHashCode()
+    {
+        return Id.GetHashCode();
+    }
 }
 
 public class SplitzUserDto

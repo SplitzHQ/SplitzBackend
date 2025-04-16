@@ -92,11 +92,70 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
+
         var group = mapper.Map<Group>(groupInputDto);
-        group.Members = [user];
+
+        // check if members are user's friends
+        var members = await db.Users.Include(splitzUser => splitzUser.Friends)
+            .Where(splitzUser =>
+                groupInputDto.MembersId.Contains(splitzUser.Id) &&
+                splitzUser.Friends.Select(friend => friend.FriendUserId).Contains(user.Id))
+            .ToListAsync();
+        group.Members = members;
+        group.UpdateMembersIdHash();
+
         group.Transactions = [];
         group.Balances = [];
+        group.LastActivityTime = DateTime.Now;
         db.Groups.Add(group);
+        await db.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
+    }
+
+    /// <summary>
+    ///     Update group info
+    /// </summary>
+    /// <param name="groupId">Group Id</param>
+    /// <param name="groupInputDto">group info</param>
+    [HttpPut("{groupId}", Name = "UpdateGroup")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(200)]
+    public async Task<ActionResult<GroupDto>> UpdateGroup(Guid groupId, GroupInputDto groupInputDto)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        var group = await db.Groups.Include(g => g.Members).FirstOrDefaultAsync(g => g.GroupId == groupId);
+        if (group is null)
+            return NotFound();
+        if (!group.Members.Contains(user))
+            return Unauthorized();
+        mapper.Map(groupInputDto, group);
+        await db.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
+    }
+
+    public async Task<ActionResult<GroupDto>> AddGroupMember(Guid groupId, List<string> userIds)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        var group = await db.Groups.Include(g => g.Members).FirstOrDefaultAsync(g => g.GroupId == groupId);
+        if (group is null)
+            return NotFound();
+
+        // check if members are user's friends
+        var members = await db.Users.Include(splitzUser => splitzUser.Friends)
+            .Where(splitzUser =>
+                userIds.Contains(splitzUser.Id) &&
+                splitzUser.Friends.Select(friend => friend.FriendUserId).Contains(user.Id))
+            .ToListAsync();
+        group.Members = [..group.Members, ..members];
+        group.Members = group.Members.Distinct().ToList();
+        group.UpdateMembersIdHash();
+        group.LastActivityTime = DateTime.Now;
         await db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
     }
@@ -168,6 +227,8 @@ public class GroupController(
         if (groupJoinLink is null)
             return NotFound();
         groupJoinLink.Group.Members.Add(user);
+        groupJoinLink.Group.UpdateMembersIdHash();
+        groupJoinLink.Group.LastActivityTime = DateTime.Now;
         await db.SaveChangesAsync();
         return mapper.Map<GroupDto>(groupJoinLink.Group);
     }

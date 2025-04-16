@@ -62,6 +62,7 @@ public class TransactionController(
             .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
         if (group is null)
             return BadRequest("Group not found");
+        group.LastActivityTime = DateTime.Now;
         var transactionMembers = transaction.Balances.Select(b => b.UserId);
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
             return BadRequest("Balance user not in group");
@@ -97,6 +98,7 @@ public class TransactionController(
             .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
         if (group is null)
             return BadRequest("Group not found");
+        group.LastActivityTime = DateTime.Now;
         var transactionMembers = transaction.Balances.Select(b => b.UserId);
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
             return BadRequest("Balance user not in group");
@@ -136,10 +138,11 @@ public class TransactionController(
         var transaction = await context.Transactions.FindAsync(id);
         if (transaction == null) return NotFound();
 
-        var groupExists =
-            await context.Groups.AnyAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
-        if (!groupExists)
+        var group = await context.Groups.Include(group => group.Members)
+            .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
+        if (group is null)
             return BadRequest("Group not found");
+        group.LastActivityTime = DateTime.UtcNow;
 
         context.Transactions.Remove(transaction);
         await context.SaveChangesAsync();
