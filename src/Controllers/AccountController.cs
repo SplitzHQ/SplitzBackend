@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
 
 namespace SplitzBackend.Controllers;
@@ -28,6 +29,11 @@ public class AccountController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
+        user = await db.Users
+            .Include(u => u.Friends)
+            .ThenInclude(f=>f.FriendUser)
+            .Include(u => u.Groups)
+            .FirstAsync(u => u.Id == user.Id);
         return mapper.Map<SplitzUserDto>(user);
     }
 

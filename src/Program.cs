@@ -23,7 +23,11 @@ public class Program
         builder.Services.AddIdentityApiEndpoints<SplitzUser>(option =>
             {
                 option.User.RequireUniqueEmail = true;
-                option.Password.RequiredLength = 8;
+                option.Password.RequiredLength = 12;
+                option.Password.RequireDigit = true;
+                option.Password.RequireLowercase = true;
+                option.Password.RequireUppercase = false;
+                option.Password.RequireNonAlphanumeric = false;
             })
             .AddEntityFrameworkStores<SplitzDbContext>();
 
@@ -52,7 +56,7 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SplitzDbContext>();
-            // db.Database.EnsureDeleted();
+            //db.Database.EnsureDeleted();
             db.Database.EnsureCreated();
         }
 

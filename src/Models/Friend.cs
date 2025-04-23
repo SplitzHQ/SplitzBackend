@@ -19,8 +19,6 @@ public class Friend
 
 public class FriendDto
 {
-    public required SplitzUserReducedDto User { get; set; }
-
     public required SplitzUserReducedDto FriendUser { get; set; }
 
     [MaxLength(256)] public string? Remark { get; set; }

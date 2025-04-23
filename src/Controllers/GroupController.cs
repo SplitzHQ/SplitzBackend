@@ -86,7 +86,7 @@ public class GroupController(
     [HttpPost(Name = "CreateGroup")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(201)]
     public async Task<ActionResult<GroupDto>> Create(GroupInputDto groupInputDto)
     {
         var user = await userManager.GetUserAsync(User);
@@ -101,6 +101,7 @@ public class GroupController(
                 groupInputDto.MembersId.Contains(splitzUser.Id) &&
                 splitzUser.Friends.Select(friend => friend.FriendUserId).Contains(user.Id))
             .ToListAsync();
+        members = members.Concat([user]).Distinct().ToList();
         group.Members = members;
         group.UpdateMembersIdHash();
 
@@ -121,7 +122,7 @@ public class GroupController(
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
-    [ProducesResponseType(200)]
+    [ProducesResponseType(201)]
     public async Task<ActionResult<GroupDto>> UpdateGroup(Guid groupId, GroupInputDto groupInputDto)
     {
         var user = await userManager.GetUserAsync(User);
@@ -137,6 +138,18 @@ public class GroupController(
         return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
     }
 
+
+    /// <summary>
+    ///    Add members to a group
+    /// </summary>
+    /// <param name="groupId">group id</param>
+    /// <param name="userIds">list of user ids</param>
+    /// <returns></returns>
+    [HttpPost("{groupId}/members", Name="AddGroupMember")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(201)]
     public async Task<ActionResult<GroupDto>> AddGroupMember(Guid groupId, List<string> userIds)
     {
         var user = await userManager.GetUserAsync(User);
