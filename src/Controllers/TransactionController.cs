@@ -20,7 +20,7 @@ public class TransactionController(
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    [HttpGet("{id}")]
+    [HttpGet("{id}", Name = "GetTransaction")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
@@ -45,7 +45,7 @@ public class TransactionController(
     /// </summary>
     /// <param name="transactionInputDto"></param>
     /// <returns></returns>
-    [HttpPost]
+    [HttpPost(Name = "AddTransaction")]
     [Produces("application/json")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
@@ -79,7 +79,7 @@ public class TransactionController(
     /// <param name="transactionId"></param>
     /// <param name="transactionInputDto"></param>
     /// <returns></returns>
-    [HttpPut("{transactionId}")]
+    [HttpPut("{transactionId}", Name = "UpdateTransaction")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
@@ -124,7 +124,7 @@ public class TransactionController(
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id}", Name = "DeleteTransaction")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]

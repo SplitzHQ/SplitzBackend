@@ -20,7 +20,7 @@ public class TransactionDraftController(
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    [HttpGet("{id}")]
+    [HttpGet("{id}", Name = "GetTransactionDraft")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
@@ -45,7 +45,7 @@ public class TransactionDraftController(
     /// </summary>
     /// <param name="transactionDraftInputDto"></param>
     /// <returns></returns>
-    [HttpPost]
+    [HttpPost(Name = "AddTransactionDraft")]
     [Produces("application/json")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
@@ -86,7 +86,7 @@ public class TransactionDraftController(
     /// <param name="transactionDraftId"></param>
     /// <param name="transactionDraftInputDto"></param>
     /// <returns></returns>
-    [HttpPut("{transactionId}")]
+    [HttpPut("{transactionId}", Name = "UpdateTransactionDraft")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
@@ -137,7 +137,7 @@ public class TransactionDraftController(
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id}", Name = "DeleteTransactionDraft")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]

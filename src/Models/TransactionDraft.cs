@@ -26,7 +26,7 @@ public class TransactionDraftBase
 
     [MaxLength(128)] public string? GeoCoordinate { get; set; }
 
-    [Url] [MaxLength(256)] public string? Photo { get; set; }
+    [Url][MaxLength(256)] public string? Photo { get; set; }
 }
 
 public class TransactionDraft : TransactionDraftBase
@@ -43,7 +43,7 @@ public class TransactionDraftDto : TransactionDraftBase
     public List<TransactionDraftBalanceDto> Balances { get; set; } = new();
 }
 
-public class TransactionDraftInputDto : TransactionBase
+public class TransactionDraftInputDto : TransactionDraftBase
 {
     public List<TransactionDraftBalanceInputDto> Balances { get; set; } = new();
 }

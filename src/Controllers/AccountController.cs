@@ -31,7 +31,7 @@ public class AccountController(
             return Unauthorized();
         user = await db.Users
             .Include(u => u.Friends)
-            .ThenInclude(f=>f.FriendUser)
+            .ThenInclude(f => f.FriendUser)
             .Include(u => u.Groups)
             .FirstAsync(u => u.Id == user.Id);
         return mapper.Map<SplitzUserDto>(user);
@@ -65,7 +65,6 @@ public class AccountController(
     /// <param name="remark">friend's remark</param>
     /// <returns></returns>
     [HttpPost("friend/{id}", Name = "AddFriend")]
-    [HttpPut("friend/{id}", Name = "AddFriend")]
     [ProducesResponseType(204)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]

@@ -35,6 +35,15 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
+        // configure default cors policy to allow all origins
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin();
+            });
+        });
+
         // configure swagger
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
@@ -66,6 +75,8 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+
+        app.UseCors();
 
         app.UseAuthorization();
 

@@ -13,7 +13,7 @@ public class MapperProfile : Profile
         CreateMap<Group, GroupDto>();
         CreateMap<Group, GroupReducedDto>();
         CreateMap<GroupBalance, GroupBalanceDto>();
-        CreateMap<GroupJoinLink, GroupBalanceDto>();
+        CreateMap<GroupJoinLink, GroupJoinLinkDto>();
         CreateMap<Transaction, TransactionDto>();
         CreateMap<TransactionBalance, TransactionBalanceDto>();
         CreateMap<TransactionDraft, TransactionDraftDto>();
