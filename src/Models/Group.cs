@@ -10,7 +10,7 @@ public class Group
 
     [MaxLength(256)] public required string Name { get; set; }
 
-    [Url] [MaxLength(256)] public string? Photo { get; set; }
+    [Url][MaxLength(256)] public string? Photo { get; set; }
 
     public List<SplitzUser> Members { get; set; } = new();
 
@@ -20,7 +20,17 @@ public class Group
 
     public List<GroupBalance> Balances { get; set; } = new();
 
-    public required DateTime LastActivityTime { get; set; }
+    /// <summary>
+    ///     The number of transactions of the group.
+    ///     This number is only for searching purposes and may not be accurate if transactions are deleted or modified.
+    /// </summary>
+    public required int TransactionCount { get; set; } = 0;
+
+    /// <summary>
+    ///     The date of the last transaction of the group.
+    ///     This is only for searching purposes and may not be accurate if transactions are deleted or modified.
+    /// </summary>
+    public required DateTime LastActivityTime { get; set; } = DateTime.Now;
 
     public void UpdateMembersIdHash()
     {
@@ -37,15 +47,25 @@ public class GroupDto
 
     [MaxLength(256)] public required string Name { get; set; }
 
-    [Url] [MaxLength(256)] public string? Photo { get; set; }
+    [Url][MaxLength(256)] public string? Photo { get; set; }
 
-    public List<SplitzUserReducedDto> Members { get; set; } = new();
+    public required List<SplitzUserReducedDto> Members { get; set; } = new();
 
     [MaxLength(16)] public required string MembersIdHash { get; set; }
 
-    public List<GroupBalanceDto> Balances { get; set; } = new();
+    public required List<GroupBalanceDto> Balances { get; set; } = new();
 
-    public required DateTime LastActivityTime { get; set; }
+    /// <summary>
+    ///     The number of transactions between the user and their friend.
+    ///     This number is only for searching purposes and may not be accurate if transactions are deleted or modified.
+    /// </summary>
+    public required int TransactionCount { get; set; } = 0;
+
+    /// <summary>
+    ///     The date of the last transaction between the user and their friend.
+    ///     This is only for searching purposes and may not be accurate if transactions are deleted or modified.
+    /// </summary>
+    public required DateTime LastActivityTime { get; set; } = DateTime.Now;
 }
 
 public class GroupReducedDto
@@ -54,14 +74,14 @@ public class GroupReducedDto
 
     [MaxLength(256)] public required string Name { get; set; }
 
-    [Url] [MaxLength(256)] public string? Photo { get; set; }
+    [Url][MaxLength(256)] public string? Photo { get; set; }
 }
 
 public class GroupInputDto
 {
     [MaxLength(256)] public required string Name { get; set; }
 
-    [Url] [MaxLength(256)] public string? Photo { get; set; }
+    [Url][MaxLength(256)] public string? Photo { get; set; }
 
     public required List<string> MembersId { get; set; }
 }

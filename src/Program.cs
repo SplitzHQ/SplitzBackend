@@ -1,8 +1,9 @@
-using System.Reflection;
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using SplitzBackend.Models;
+using System.Reflection;
 
 namespace SplitzBackend;
 
@@ -41,6 +42,8 @@ public class Program
             options.AddDefaultPolicy(policy =>
             {
                 policy.AllowAnyOrigin();
+                policy.AllowAnyMethod();
+                policy.AllowAnyHeader();
             });
         });
 
@@ -51,6 +54,15 @@ public class Program
         {
             var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+            options.SupportNonNullableReferenceTypes();
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.ApiKey,
+                In = ParameterLocation.Header,
+                Scheme = "Bearer"
+            });
+            options.OperationFilter<SwaggerSecurityOperationFilter>();
         });
 
         // configure automapper

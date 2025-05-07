@@ -63,6 +63,8 @@ public class TransactionController(
         if (group is null)
             return BadRequest("Group not found");
         group.LastActivityTime = DateTime.Now;
+        group.TransactionCount++;
+
         var transactionMembers = transaction.Balances.Select(b => b.UserId);
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
             return BadRequest("Balance user not in group");
@@ -143,6 +145,7 @@ public class TransactionController(
         if (group is null)
             return BadRequest("Group not found");
         group.LastActivityTime = DateTime.UtcNow;
+        group.TransactionCount--;
 
         context.Transactions.Remove(transaction);
         await context.SaveChangesAsync();

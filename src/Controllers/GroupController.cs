@@ -145,7 +145,7 @@ public class GroupController(
     /// <param name="groupId">group id</param>
     /// <param name="userIds">list of user ids</param>
     /// <returns></returns>
-    [HttpPost("{groupId}/members", Name="AddGroupMember")]
+    [HttpPost("{groupId}/members", Name = "AddGroupMember")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
@@ -165,7 +165,7 @@ public class GroupController(
                 userIds.Contains(splitzUser.Id) &&
                 splitzUser.Friends.Select(friend => friend.FriendUserId).Contains(user.Id))
             .ToListAsync();
-        group.Members = [..group.Members, ..members];
+        group.Members = [.. group.Members, .. members];
         group.Members = group.Members.Distinct().ToList();
         group.UpdateMembersIdHash();
         group.LastActivityTime = DateTime.Now;
