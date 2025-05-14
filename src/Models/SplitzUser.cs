@@ -31,7 +31,7 @@ public class SplitzUserDto
     [Url][MaxLength(256)] public string? Photo { get; set; }
 
     public List<FriendDto> Friends { get; set; } = new();
-    public List<Group> Groups { get; set; } = new();
+    public List<GroupReducedDto> Groups { get; set; } = new();
     public List<GroupBalance> Balances { get; set; } = new();
 }
 
