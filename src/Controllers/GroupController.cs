@@ -86,6 +86,7 @@ public class GroupController(
     [HttpPost(Name = "CreateGroup")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
+    [ProducesResponseType(200)]
     [ProducesResponseType(201)]
     public async Task<ActionResult<GroupDto>> Create(GroupInputDto groupInputDto)
     {
@@ -104,6 +105,14 @@ public class GroupController(
         members = members.Concat([user]).Distinct().ToList();
         group.Members = members;
         group.UpdateMembersIdHash();
+
+        // check if group with the same member hash exists
+        var existingGroup = await db.Groups
+            .Where(g => g.MembersIdHash == group.MembersIdHash)
+            .FirstOrDefaultAsync();
+        if (existingGroup is not null)
+            // return existing group
+            return Ok(mapper.Map<GroupDto>(existingGroup));
 
         group.Transactions = [];
         group.Balances = [];
