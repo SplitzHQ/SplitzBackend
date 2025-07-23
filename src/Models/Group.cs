@@ -8,7 +8,10 @@ public class Group
 {
     public Guid GroupId { get; set; }
 
-    [MaxLength(256)] public required string Name { get; set; }
+    [Required]
+    [MinLength(1, ErrorMessage = "Group name cannot be empty")]
+    [MaxLength(256)]
+    public required string Name { get; set; }
 
     [Url][MaxLength(256)] public string? Photo { get; set; }
 
@@ -24,6 +27,7 @@ public class Group
     ///     The number of transactions of the group.
     ///     This number is only for searching purposes and may not be accurate if transactions are deleted or modified.
     /// </summary>
+    [Range(0, int.MaxValue, ErrorMessage = "Transaction count cannot be negative")]
     public required int TransactionCount { get; set; } = 0;
 
     /// <summary>
@@ -45,7 +49,10 @@ public class GroupDto
 {
     public required Guid GroupId { get; set; }
 
-    [MaxLength(256)] public required string Name { get; set; }
+    [Required]
+    [MinLength(1, ErrorMessage = "Group name cannot be empty")]
+    [MaxLength(256)]
+    public required string Name { get; set; }
 
     [Url][MaxLength(256)] public string? Photo { get; set; }
 
@@ -59,6 +66,7 @@ public class GroupDto
     ///     The number of transactions between the user and their friend.
     ///     This number is only for searching purposes and may not be accurate if transactions are deleted or modified.
     /// </summary>
+    [Range(0, int.MaxValue, ErrorMessage = "Transaction count cannot be negative")]
     public required int TransactionCount { get; set; } = 0;
 
     /// <summary>
@@ -72,16 +80,24 @@ public class GroupReducedDto
 {
     public required Guid GroupId { get; set; }
 
-    [MaxLength(256)] public required string Name { get; set; }
+    [Required]
+    [MinLength(1, ErrorMessage = "Group name cannot be empty")]
+    [MaxLength(256)]
+    public required string Name { get; set; }
 
     [Url][MaxLength(256)] public string? Photo { get; set; }
 }
 
 public class GroupInputDto
 {
-    [MaxLength(256)] public required string Name { get; set; }
+    [Required]
+    [MinLength(1, ErrorMessage = "Group name cannot be empty")]
+    [MaxLength(256)]
+    public required string Name { get; set; }
 
     [Url][MaxLength(256)] public string? Photo { get; set; }
 
+    [Required]
+    [MinLength(1, ErrorMessage = "At least one member is required")]
     public required List<string> MembersId { get; set; }
 }

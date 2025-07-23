@@ -18,8 +18,12 @@ public class TransactionDraftBase
 
     public DateTime? TransactionTime { get; set; }
 
+    [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
     public decimal? Amount { get; set; }
 
+    [MinLength(3, ErrorMessage = "Currency code must be 3 characters")]
+    [MaxLength(3, ErrorMessage = "Currency code cannot exceed 3 characters")]
+    [RegularExpression(@"^[A-Z]{3}$", ErrorMessage = "Currency must be a valid 3-letter ISO code (e.g., USD, EUR)")]
     public string? Currency { get; set; }
 
     public List<Tag> Tags { get; set; } = new();

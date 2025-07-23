@@ -26,7 +26,10 @@ public class SplitzUserDto
 {
     public required string Id { get; set; }
 
-    [MaxLength(256)] public required string UserName { get; set; }
+    [Required]
+    [MinLength(1, ErrorMessage = "Username cannot be empty")]
+    [MaxLength(256)]
+    public required string UserName { get; set; }
 
     [Url][MaxLength(256)] public string? Photo { get; set; }
 
@@ -39,7 +42,10 @@ public class SplitzUserReducedDto
 {
     public required string Id { get; set; }
 
-    [MaxLength(256)] public required string UserName { get; set; }
+    [Required]
+    [MinLength(1, ErrorMessage = "Username cannot be empty")]
+    [MaxLength(256)]
+    public required string UserName { get; set; }
 
     [Url][MaxLength(256)] public string? Photo { get; set; }
 }

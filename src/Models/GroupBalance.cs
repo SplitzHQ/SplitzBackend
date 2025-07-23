@@ -20,7 +20,11 @@ public class GroupBalance
 
     public required decimal Balance { get; set; }
 
-    [MaxLength(16)] public required string Currency { get; set; }
+    [Required]
+    [MinLength(3, ErrorMessage = "Currency code must be 3 characters")]
+    [MaxLength(3)]
+    [RegularExpression(@"^[A-Z]{3}$", ErrorMessage = "Currency must be a valid 3-letter ISO code (e.g., USD, EUR)")]
+    public required string Currency { get; set; }
 }
 
 public class GroupBalanceDto
@@ -33,5 +37,9 @@ public class GroupBalanceDto
 
     public required decimal Balance { get; set; }
 
-    [MaxLength(16)] public required string Currency { get; set; }
+    [Required]
+    [MinLength(3, ErrorMessage = "Currency code must be 3 characters")]
+    [MaxLength(3)]
+    [RegularExpression(@"^[A-Z]{3}$", ErrorMessage = "Currency must be a valid 3-letter ISO code (e.g., USD, EUR)")]
+    public required string Currency { get; set; }
 }
