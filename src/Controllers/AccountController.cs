@@ -11,7 +11,6 @@ namespace SplitzBackend.Controllers;
 [ApiController]
 [Route("[controller]")]
 public class AccountController(
-    ILogger<AccountController> logger,
     SplitzDbContext db,
     UserManager<SplitzUser> userManager,
     IMapper mapper) : ControllerBase
