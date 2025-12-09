@@ -11,7 +11,6 @@ namespace SplitzBackend.Controllers;
 [ApiController]
 [Route("[controller]")]
 public class GroupController(
-    ILogger<GroupController> logger,
     SplitzDbContext db,
     UserManager<SplitzUser> userManager,
     IMapper mapper)

@@ -1,0 +1,512 @@
+{
+  "settings": {
+    "components": {
+      "code": false,
+      "binaries": false
+    },
+    "targetId": "net10.0",
+    "targetDisplayName": ".NETCoreApp,Version=v10.0"
+  },
+  "analysisStartTime": "2025-12-09T20:25:59.0544188Z",
+  "analysisEndTime": "2025-12-09T20:26:07.7226891Z",
+  "privacyModeHelpUrl": "https://go.microsoft.com/fwlink/?linkid=2270980",
+  "stats": {
+    "summary": {
+      "projects": 1,
+      "issues": 5,
+      "incidents": 16,
+      "effort": 16
+    },
+    "charts": {
+      "severity": {
+        "Mandatory": 3,
+        "Optional": 0,
+        "Potential": 13,
+        "Information": 0
+      },
+      "category": {
+        "NuGet": 10,
+        "Project": 1,
+        "Api": 5
+      }
+    }
+  },
+  "projects": [
+    {
+      "path": "SplitzBackend.csproj",
+      "startingProject": true,
+      "issues": 5,
+      "storyPoints": 16,
+      "properties": {
+        "appName": "SplitzBackend",
+        "projectKind": "AspNetCore",
+        "frameworks": [
+          "net8.0"
+        ],
+        "languages": [
+          "C#"
+        ],
+        "tools": [
+          "MSBuild"
+        ],
+        "isSdkStyle": true,
+        "numberOfFiles": 20,
+        "numberOfCodeFiles": 18,
+        "linesTotal": 1535,
+        "linesOfCode": 1515,
+        "totalApiScanned": 2269,
+        "minLinesOfCodeToChange": 5,
+        "maxLinesOfCodeToChange": 5
+      },
+      "ruleInstances": [
+        {
+          "incidentId": "64aa1c4e-6759-4470-ac85-0b2fe574932a",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.15\n\nRecommendation:\n\nRemove Microsoft.AspNetCore.Identity.EntityFrameworkCore, and replace with new package Microsoft.AspNetCore.Identity.EntityFrameworkCore 10.0.1",
+              "protected": "Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.15\n\nRecommendation:\n\nRemove Microsoft.AspNetCore.Identity.EntityFrameworkCore, and replace with new package Microsoft.AspNetCore.Identity.EntityFrameworkCore 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.15\n\nRecommendation:\n\nRemove Microsoft.AspNetCore.Identity.EntityFrameworkCore, and replace with new package Microsoft.AspNetCore.Identity.EntityFrameworkCore 10.0.1",
+            "protectedSnippet": "Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.15\n\nRecommendation:\n\nRemove Microsoft.AspNetCore.Identity.EntityFrameworkCore, and replace with new package Microsoft.AspNetCore.Identity.EntityFrameworkCore 10.0.1",
+            "label": "Microsoft.AspNetCore.Identity.EntityFrameworkCore 8.0.15",
+            "properties": {
+              "PackageId": "Microsoft.AspNetCore.Identity.EntityFrameworkCore",
+              "PackageVersion": "8.0.15",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "a1abbd95-67d7-4e1d-9880-2f28fba51b53",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.EntityFrameworkCore, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore, and replace with new package Microsoft.EntityFrameworkCore 10.0.1",
+              "protected": "Microsoft.EntityFrameworkCore, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore, and replace with new package Microsoft.EntityFrameworkCore 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Microsoft.EntityFrameworkCore, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore, and replace with new package Microsoft.EntityFrameworkCore 10.0.1",
+            "protectedSnippet": "Microsoft.EntityFrameworkCore, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore, and replace with new package Microsoft.EntityFrameworkCore 10.0.1",
+            "label": "Microsoft.EntityFrameworkCore 9.0.4",
+            "properties": {
+              "PackageId": "Microsoft.EntityFrameworkCore",
+              "PackageVersion": "9.0.4",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "be1ca106-9a05-4289-8b49-a9fc9d0c010a",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.EntityFrameworkCore.Design, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Design, and replace with new package Microsoft.EntityFrameworkCore.Design 10.0.1",
+              "protected": "Microsoft.EntityFrameworkCore.Design, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Design, and replace with new package Microsoft.EntityFrameworkCore.Design 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Microsoft.EntityFrameworkCore.Design, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Design, and replace with new package Microsoft.EntityFrameworkCore.Design 10.0.1",
+            "protectedSnippet": "Microsoft.EntityFrameworkCore.Design, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Design, and replace with new package Microsoft.EntityFrameworkCore.Design 10.0.1",
+            "label": "Microsoft.EntityFrameworkCore.Design 9.0.4",
+            "properties": {
+              "PackageId": "Microsoft.EntityFrameworkCore.Design",
+              "PackageVersion": "9.0.4",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "9798559f-8b67-4847-b715-d4f2ab7bf515",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.EntityFrameworkCore.Sqlite, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Sqlite, and replace with new package Microsoft.EntityFrameworkCore.Sqlite 10.0.1",
+              "protected": "Microsoft.EntityFrameworkCore.Sqlite, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Sqlite, and replace with new package Microsoft.EntityFrameworkCore.Sqlite 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Microsoft.EntityFrameworkCore.Sqlite, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Sqlite, and replace with new package Microsoft.EntityFrameworkCore.Sqlite 10.0.1",
+            "protectedSnippet": "Microsoft.EntityFrameworkCore.Sqlite, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Sqlite, and replace with new package Microsoft.EntityFrameworkCore.Sqlite 10.0.1",
+            "label": "Microsoft.EntityFrameworkCore.Sqlite 9.0.4",
+            "properties": {
+              "PackageId": "Microsoft.EntityFrameworkCore.Sqlite",
+              "PackageVersion": "9.0.4",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "0409b69c-987c-4dbf-956f-2cf8fac99bb6",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.EntityFrameworkCore.Tools, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Tools, and replace with new package Microsoft.EntityFrameworkCore.Tools 10.0.1",
+              "protected": "Microsoft.EntityFrameworkCore.Tools, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Tools, and replace with new package Microsoft.EntityFrameworkCore.Tools 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Microsoft.EntityFrameworkCore.Tools, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Tools, and replace with new package Microsoft.EntityFrameworkCore.Tools 10.0.1",
+            "protectedSnippet": "Microsoft.EntityFrameworkCore.Tools, 9.0.4\n\nRecommendation:\n\nRemove Microsoft.EntityFrameworkCore.Tools, and replace with new package Microsoft.EntityFrameworkCore.Tools 10.0.1",
+            "label": "Microsoft.EntityFrameworkCore.Tools 9.0.4",
+            "properties": {
+              "PackageId": "Microsoft.EntityFrameworkCore.Tools",
+              "PackageVersion": "9.0.4",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "b9e4b49a-80ef-4a53-ac2d-4dc942eda7fd",
+          "ruleId": "NuGet.0001",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets, 1.21.2\n\nRecommendation:\n\nNo supported version found",
+              "protected": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets, 1.21.2\n\nRecommendation:\n\nNo supported version found"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets, 1.21.2\n\nRecommendation:\n\nNo supported version found",
+            "protectedSnippet": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets, 1.21.2\n\nRecommendation:\n\nNo supported version found",
+            "label": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets 1.21.2",
+            "properties": {
+              "PackageId": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets",
+              "PackageVersion": "1.21.2",
+              "PackageNewVersion": null,
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "d6f94f05-37f3-40ca-a515-721310c82ff2",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Microsoft.VisualStudio.Web.CodeGeneration.Design, 9.0.0\n\nRecommendation:\n\nRemove Microsoft.VisualStudio.Web.CodeGeneration.Design, and replace with new package Microsoft.VisualStudio.Web.CodeGeneration.Design 10.0.0",
+              "protected": "Microsoft.VisualStudio.Web.CodeGeneration.Design, 9.0.0\n\nRecommendation:\n\nRemove Microsoft.VisualStudio.Web.CodeGeneration.Design, and replace with new package Microsoft.VisualStudio.Web.CodeGeneration.Design 10.0.0"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Microsoft.VisualStudio.Web.CodeGeneration.Design, 9.0.0\n\nRecommendation:\n\nRemove Microsoft.VisualStudio.Web.CodeGeneration.Design, and replace with new package Microsoft.VisualStudio.Web.CodeGeneration.Design 10.0.0",
+            "protectedSnippet": "Microsoft.VisualStudio.Web.CodeGeneration.Design, 9.0.0\n\nRecommendation:\n\nRemove Microsoft.VisualStudio.Web.CodeGeneration.Design, and replace with new package Microsoft.VisualStudio.Web.CodeGeneration.Design 10.0.0",
+            "label": "Microsoft.VisualStudio.Web.CodeGeneration.Design 9.0.0",
+            "properties": {
+              "PackageId": "Microsoft.VisualStudio.Web.CodeGeneration.Design",
+              "PackageVersion": "9.0.0",
+              "PackageNewVersion": "10.0.0",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "696c4d65-4332-4a1c-acff-edb845b48f2a",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "System.Formats.Asn1, 9.0.4\n\nRecommendation:\n\nRemove System.Formats.Asn1, and replace with new package System.Formats.Asn1 10.0.1",
+              "protected": "System.Formats.Asn1, 9.0.4\n\nRecommendation:\n\nRemove System.Formats.Asn1, and replace with new package System.Formats.Asn1 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "System.Formats.Asn1, 9.0.4\n\nRecommendation:\n\nRemove System.Formats.Asn1, and replace with new package System.Formats.Asn1 10.0.1",
+            "protectedSnippet": "System.Formats.Asn1, 9.0.4\n\nRecommendation:\n\nRemove System.Formats.Asn1, and replace with new package System.Formats.Asn1 10.0.1",
+            "label": "System.Formats.Asn1 9.0.4",
+            "properties": {
+              "PackageId": "System.Formats.Asn1",
+              "PackageVersion": "9.0.4",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "2fa02789-98c9-462a-b5cf-d1c4ae1c97a5",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "System.IO.Hashing, 9.0.4\n\nRecommendation:\n\nRemove System.IO.Hashing, and replace with new package System.IO.Hashing 10.0.1",
+              "protected": "System.IO.Hashing, 9.0.4\n\nRecommendation:\n\nRemove System.IO.Hashing, and replace with new package System.IO.Hashing 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "System.IO.Hashing, 9.0.4\n\nRecommendation:\n\nRemove System.IO.Hashing, and replace with new package System.IO.Hashing 10.0.1",
+            "protectedSnippet": "System.IO.Hashing, 9.0.4\n\nRecommendation:\n\nRemove System.IO.Hashing, and replace with new package System.IO.Hashing 10.0.1",
+            "label": "System.IO.Hashing 9.0.4",
+            "properties": {
+              "PackageId": "System.IO.Hashing",
+              "PackageVersion": "9.0.4",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "d52bfc9f-e1e1-46b3-a1cd-1c75347453b1",
+          "ruleId": "NuGet.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "System.Text.Json, 9.0.4\n\nRecommendation:\n\nRemove System.Text.Json, and replace with new package System.Text.Json 10.0.1",
+              "protected": "System.Text.Json, 9.0.4\n\nRecommendation:\n\nRemove System.Text.Json, and replace with new package System.Text.Json 10.0.1"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "System.Text.Json, 9.0.4\n\nRecommendation:\n\nRemove System.Text.Json, and replace with new package System.Text.Json 10.0.1",
+            "protectedSnippet": "System.Text.Json, 9.0.4\n\nRecommendation:\n\nRemove System.Text.Json, and replace with new package System.Text.Json 10.0.1",
+            "label": "System.Text.Json 9.0.4",
+            "properties": {
+              "PackageId": "System.Text.Json",
+              "PackageVersion": "9.0.4",
+              "PackageNewVersion": "10.0.1",
+              "PackageReplacements": null
+            }
+          }
+        },
+        {
+          "incidentId": "0404bb0d-7871-4e1d-84df-aeeceef08b16",
+          "ruleId": "Project.0002",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "Current target framework: net8.0\nRecommended target framework: net10.0",
+              "protected": "Current target framework: net8.0\nRecommended target framework: net10.0"
+            },
+            "kind": "File",
+            "path": "SplitzBackend.csproj",
+            "snippet": "Current target framework: net8.0\nRecommended target framework: net10.0",
+            "protectedSnippet": "Current target framework: net8.0\nRecommended target framework: net10.0",
+            "properties": {
+              "CurrentTargetFramework": "net8.0",
+              "RecommendedTargetFramework": "net10.0"
+            }
+          }
+        },
+        {
+          "incidentId": "9a6e9a03-6c26-416f-b262-72f2322990e4",
+          "ruleId": "Api.0002",
+          "description": "API is available in package System.IO.Hashing, 9.0.0-preview.6.24302.3. Add package reference to System.IO.Hashing, 9.0.0-preview.6.24302.3",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "var xxhash3 = XxHash3.Hash(Encoding.UTF8.GetBytes(membersId));",
+              "protected": "T:System.IO.Hashing.XxHash3"
+            },
+            "kind": "File",
+            "path": "src\\Models\\Group.cs",
+            "snippet": "var xxhash3 = XxHash3.Hash(Encoding.UTF8.GetBytes(membersId));",
+            "protectedSnippet": "T:System.IO.Hashing.XxHash3",
+            "label": "T:System.IO.Hashing.XxHash3",
+            "properties": {
+              "PackageId": "System.IO.Hashing",
+              "PackageNewVersion": "9.0.0-preview.6.24302.3"
+            },
+            "line": 42,
+            "column": 8
+          }
+        },
+        {
+          "incidentId": "7ee3c821-09da-4b19-8882-e3ad6cc10a0a",
+          "ruleId": "Api.0002",
+          "description": "API is available in package System.IO.Hashing, 9.0.0-preview.6.24302.3. Add package reference to System.IO.Hashing, 9.0.0-preview.6.24302.3",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "var xxhash3 = XxHash3.Hash(Encoding.UTF8.GetBytes(membersId));",
+              "protected": "M:System.IO.Hashing.XxHash3.Hash(System.Byte[])"
+            },
+            "kind": "File",
+            "path": "src\\Models\\Group.cs",
+            "snippet": "var xxhash3 = XxHash3.Hash(Encoding.UTF8.GetBytes(membersId));",
+            "protectedSnippet": "M:System.IO.Hashing.XxHash3.Hash(System.Byte[])",
+            "label": "M:System.IO.Hashing.XxHash3.Hash(System.Byte[])",
+            "properties": {
+              "PackageId": "System.IO.Hashing",
+              "PackageNewVersion": "9.0.0-preview.6.24302.3"
+            },
+            "line": 42,
+            "column": 8
+          }
+        },
+        {
+          "incidentId": "de2ad14f-fdf9-495d-a26e-7c2fbe95e0a4",
+          "ruleId": "Api.0001",
+          "description": "API is unavailable in net8.0 ",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "builder.Services.AddAutoMapper((serviceProvider, automapper) =\u003E\r\n        {\r\n            automapper.AddCollectionMappers();\r\n            automapper.UseEntityFrameworkCoreModel\u003CSplitzDbContext\u003E(serviceProvider);\r\n        }, typeof(SplitzDbContext), typeof(MapperProfile));",
+              "protected": "T:Microsoft.Extensions.DependencyInjection.ServiceCollectionExtensions"
+            },
+            "kind": "File",
+            "path": "src\\Program.cs",
+            "snippet": "builder.Services.AddAutoMapper((serviceProvider, automapper) =\u003E\r\n        {\r\n            automapper.AddCollectionMappers();\r\n            automapper.UseEntityFrameworkCoreModel\u003CSplitzDbContext\u003E(serviceProvider);\r\n        }, typeof(SplitzDbContext), typeof(MapperProfile));",
+            "protectedSnippet": "T:Microsoft.Extensions.DependencyInjection.ServiceCollectionExtensions",
+            "label": "T:Microsoft.Extensions.DependencyInjection.ServiceCollectionExtensions",
+            "line": 69,
+            "column": 8
+          }
+        },
+        {
+          "incidentId": "a637e0a2-a59e-4e37-bb30-c80bbf95fa3d",
+          "ruleId": "Api.0002",
+          "description": "API is available in package Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.6. Add package reference to Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.6",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "builder.Services.AddIdentityApiEndpoints\u003CSplitzUser\u003E(option =\u003E\r\n            {\r\n                option.User.RequireUniqueEmail = true;\r\n                option.Password.RequiredLength = 12;\r\n                option.Password.RequireDigit = true;\r\n                option.Password.RequireLowercase = true;\r\n                option.Password.RequireUppercase = false;\r\n                option.Password.RequireNonAlphanumeric = false;\r\n            })\r\n            .AddEntityFrameworkStores\u003CSplitzDbContext\u003E();",
+              "protected": "T:Microsoft.Extensions.DependencyInjection.IdentityEntityFrameworkBuilderExtensions"
+            },
+            "kind": "File",
+            "path": "src\\Program.cs",
+            "snippet": "builder.Services.AddIdentityApiEndpoints\u003CSplitzUser\u003E(option =\u003E\r\n            {\r\n                option.User.RequireUniqueEmail = true;\r\n                option.Password.RequiredLength = 12;\r\n                option.Password.RequireDigit = true;\r\n                option.Password.RequireLowercase = true;\r\n                option.Password.RequireUppercase = false;\r\n                option.Password.RequireNonAlphanumeric = false;\r\n            })\r\n            .AddEntityFrameworkStores\u003CSplitzDbContext\u003E();",
+            "protectedSnippet": "T:Microsoft.Extensions.DependencyInjection.IdentityEntityFrameworkBuilderExtensions",
+            "label": "T:Microsoft.Extensions.DependencyInjection.IdentityEntityFrameworkBuilderExtensions",
+            "properties": {
+              "PackageId": "Microsoft.AspNetCore.Identity.EntityFrameworkCore",
+              "PackageNewVersion": "8.0.6"
+            },
+            "line": 24,
+            "column": 8
+          }
+        },
+        {
+          "incidentId": "f1965c7f-c8b6-498c-8c5b-44efe78c6536",
+          "ruleId": "Api.0002",
+          "description": "API is available in package Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.6. Add package reference to Microsoft.AspNetCore.Identity.EntityFrameworkCore, 8.0.6",
+          "projectPath": "SplitzBackend.csproj",
+          "state": "Active",
+          "location": {
+            "snippetModel": {
+              "unrestricted": "builder.Services.AddIdentityApiEndpoints\u003CSplitzUser\u003E(option =\u003E\r\n            {\r\n                option.User.RequireUniqueEmail = true;\r\n                option.Password.RequiredLength = 12;\r\n                option.Password.RequireDigit = true;\r\n                option.Password.RequireLowercase = true;\r\n                option.Password.RequireUppercase = false;\r\n                option.Password.RequireNonAlphanumeric = false;\r\n            })\r\n            .AddEntityFrameworkStores\u003CSplitzDbContext\u003E();",
+              "protected": "M:Microsoft.Extensions.DependencyInjection.IdentityEntityFrameworkBuilderExtensions.AddEntityFrameworkStores\u0060\u00601(Microsoft.AspNetCore.Identity.IdentityBuilder)"
+            },
+            "kind": "File",
+            "path": "src\\Program.cs",
+            "snippet": "builder.Services.AddIdentityApiEndpoints\u003CSplitzUser\u003E(option =\u003E\r\n            {\r\n                option.User.RequireUniqueEmail = true;\r\n                option.Password.RequiredLength = 12;\r\n                option.Password.RequireDigit = true;\r\n                option.Password.RequireLowercase = true;\r\n                option.Password.RequireUppercase = false;\r\n                option.Password.RequireNonAlphanumeric = false;\r\n            })\r\n            .AddEntityFrameworkStores\u003CSplitzDbContext\u003E();",
+            "protectedSnippet": "M:Microsoft.Extensions.DependencyInjection.IdentityEntityFrameworkBuilderExtensions.AddEntityFrameworkStores\u0060\u00601(Microsoft.AspNetCore.Identity.IdentityBuilder)",
+            "label": "M:Microsoft.Extensions.DependencyInjection.IdentityEntityFrameworkBuilderExtensions.AddEntityFrameworkStores\u0060\u00601(Microsoft.AspNetCore.Identity.IdentityBuilder)",
+            "properties": {
+              "PackageId": "Microsoft.AspNetCore.Identity.EntityFrameworkCore",
+              "PackageNewVersion": "8.0.6"
+            },
+            "line": 24,
+            "column": 8
+          }
+        }
+      ],
+      "features": []
+    }
+  ],
+  "rules": {
+    "NuGet.0002": {
+      "id": "NuGet.0002",
+      "isFeature": false,
+      "description": "NuGet package upgrade is recommended for selected target framework.\n\nStandard .NET packages are recommended to have versions matching version of .NET that project targets.\n\nSome other packages also are known to work better for selected target frameworks.",
+      "label": "NuGet package upgrade is recommended",
+      "severity": "Potential",
+      "effort": 1,
+      "links": [
+        {
+          "url": "https://go.microsoft.com/fwlink/?linkid=2262530",
+          "isCustom": false
+        }
+      ]
+    },
+    "NuGet.0001": {
+      "id": "NuGet.0001",
+      "isFeature": false,
+      "description": "NuGet package is incompatible with selected target framework.\n\nPackage needs to be upgraded to a version supporting selected project target framework. If there no new package versions supporting new target framework, different package needs to be used and all code needs to be upgraded to new API.",
+      "label": "NuGet package is incompatible",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "url": "https://go.microsoft.com/fwlink/?linkid=2262529",
+          "isCustom": false
+        }
+      ]
+    },
+    "Project.0002": {
+      "id": "Project.0002",
+      "isFeature": false,
+      "description": "Project\u0027s target framework(s) needs to be changed to the new target framework that you selected for this upgrade.\n\nDuring upgrade target framework will be adjusted to corresponding platform when applicable. In some cases project would result in multiple target frameworks after the upgrade if it was using features that now have their own platforms in modern .NET frameworks (windows, iOS, Android etc).",
+      "label": "Project\u0027s target framework(s) needs to be changed",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Overview of porting from .NET Framework to .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265227",
+          "isCustom": false
+        },
+        {
+          "title": ".NET project SDKs",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2265226",
+          "isCustom": false
+        }
+      ]
+    },
+    "Api.0002": {
+      "id": "Api.0002",
+      "isFeature": false,
+      "description": "API is source incompatible for selected .NET version: requires code changes to compile successfully when targeting a new version, such as removing obsolete APIs or changing method signatures.",
+      "label": "Source incompatible for selected .NET version",
+      "severity": "Potential",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Breaking changes in .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2262679",
+          "isCustom": false
+        }
+      ]
+    },
+    "Api.0001": {
+      "id": "Api.0001",
+      "isFeature": false,
+      "description": "API is binary incompatible for selected .NET version: affects existing binaries, often requiring recompilation, because the API has changed in a way that prevents older binaries from loading or executing.",
+      "label": "Binary incompatible for selected .NET version",
+      "severity": "Mandatory",
+      "effort": 1,
+      "links": [
+        {
+          "title": "Breaking changes in .NET",
+          "url": "https://go.microsoft.com/fwlink/?linkid=2262679",
+          "isCustom": false
+        }
+      ]
+    }
+  }
+}
