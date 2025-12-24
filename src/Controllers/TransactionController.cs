@@ -72,7 +72,15 @@ public class TransactionController(
         context.Transactions.Add(transaction);
         await context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId }, transaction);
+        // Reload the transaction with related data and map to DTO
+        var transactionDto = await mapper.ProjectTo<TransactionDto>(
+            context.Transactions
+                .Include(t => t.Balances)
+                    .ThenInclude(b => b.User)
+                .Where(t => t.TransactionId == transaction.TransactionId)
+        ).FirstOrDefaultAsync();
+
+        return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId }, transactionDto);
     }
 
     /// <summary>
