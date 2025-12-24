@@ -72,7 +72,7 @@ public class TransactionController(
         context.Transactions.Add(transaction);
         await context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId }, transaction);
+        return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId }, mapper.Map<TransactionDto>(transaction));
     }
 
     /// <summary>
