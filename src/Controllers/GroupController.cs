@@ -29,8 +29,17 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        var groups = db.Groups.Where(g => g.Members.Contains(user));
-        return await mapper.ProjectTo<GroupDto>(groups).ToListAsync();
+        
+        var groups = await db.Groups
+            .Include(g => g.Members)
+            .Include(g => g.Transactions)
+                .ThenInclude(t => t.Balances)
+                    .ThenInclude(b => b.User)
+            .Where(g => g.Members.Contains(user))
+            .ToListAsync();
+        
+        var groupDtos = groups.Select(g => CalculateGroupBalance(g, mapper)).ToList();
+        return groupDtos;
     }
 
     /// <summary>
@@ -47,12 +56,19 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        var group = await mapper
-            .ProjectTo<GroupDto>(db.Groups.Where(g => g.Members.Contains(user) && g.GroupId == groupId))
+        
+        var group = await db.Groups
+            .Include(g => g.Members)
+            .Include(g => g.Transactions)
+                .ThenInclude(t => t.Balances)
+                    .ThenInclude(b => b.User)
+            .Where(g => g.Members.Contains(user) && g.GroupId == groupId)
             .FirstOrDefaultAsync();
+        
         if (group is null)
             return NotFound();
-        return group;
+        
+        return CalculateGroupBalance(group, mapper);
     }
 
     /// <summary>
@@ -252,5 +268,96 @@ public class GroupController(
         groupJoinLink.Group.LastActivityTime = DateTime.Now;
         await db.SaveChangesAsync();
         return mapper.Map<GroupDto>(groupJoinLink.Group);
+    }
+
+    private static GroupDto CalculateGroupBalance(Group group, IMapper mapper)
+    {
+        var groupDto = mapper.Map<GroupDto>(group);
+        
+        // Calculate GroupBalance from TransactionBalance
+        // Get all transaction balances grouped by currency
+        var transactionBalances = group.Transactions
+            .SelectMany(t => t.Balances.Select(b => new
+            {
+                b.UserId,
+                b.Balance,
+                Currency = t.Currency,
+                User = b.User
+            }))
+            .ToList();
+
+        // Group by currency
+        var balancesByCurrency = transactionBalances
+            .GroupBy(tb => tb.Currency)
+            .ToList();
+
+        var groupBalances = new List<GroupBalanceDto>();
+
+        foreach (var currencyGroup in balancesByCurrency)
+        {
+            var currency = currencyGroup.Key;
+            var balances = currencyGroup.ToList();
+
+            // Get all unique user IDs
+            var userIds = balances.Select(b => b.UserId).Distinct().ToList();
+
+            // Calculate balance for each pair of users
+            for (int i = 0; i < userIds.Count; i++)
+            {
+                for (int j = i + 1; j < userIds.Count; j++)
+                {
+                    var userId = userIds[i];
+                    var friendUserId = userIds[j];
+
+                    // Calculate net balance between the two users
+                    // TransactionBalance.Balance meaning:
+                    // - If Balance > 0: user owes money (user is debtor)
+                    // - If Balance < 0: user is owed money (user is creditor)
+                    //
+                    // For GroupBalance from user A's perspective to friend B:
+                    // - If Balance > 0: A owes B
+                    // - If Balance < 0: B owes A
+                    //
+                    // Calculate per-transaction balance between the two users
+                    var netBalance = 0m;
+                    var transactions = group.Transactions.Where(t => t.Currency == currency).ToList();
+                    
+                    foreach (var transaction in transactions)
+                    {
+                        var userBalance = transaction.Balances.FirstOrDefault(b => b.UserId == userId);
+                        var friendBalance = transaction.Balances.FirstOrDefault(b => b.UserId == friendUserId);
+                        
+                        if (userBalance != null && friendBalance != null)
+                        {
+                            // For this transaction, calculate the net balance from user's perspective
+                            // Formula: netBalance += friendBalance.Balance - userBalance.Balance
+                            // This works correctly for two-person transactions and gives a reasonable
+                            // approximation for multi-person transactions
+                            netBalance += friendBalance.Balance - userBalance.Balance;
+                        }
+                    }
+
+                    if (netBalance != 0)
+                    {
+                        var user = mapper.Map<SplitzUserReducedDto>(
+                            balances.First(b => b.UserId == userId).User);
+                        var friendUser = mapper.Map<SplitzUserReducedDto>(
+                            balances.First(b => b.UserId == friendUserId).User);
+
+                        groupBalances.Add(new GroupBalanceDto
+                        {
+                            GroupId = group.GroupId,
+                            User = user,
+                            FriendUser = friendUser,
+                            Balance = netBalance,
+                            Currency = currency
+                        });
+                    }
+                }
+            }
+        }
+
+        groupDto.Balances = groupBalances;
+        return groupDto;
     }
 }

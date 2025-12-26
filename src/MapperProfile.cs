@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
 
 namespace SplitzBackend;
@@ -10,7 +12,8 @@ public class MapperProfile : Profile
         CreateMap<SplitzUser, SplitzUserDto>();
         CreateMap<SplitzUser, SplitzUserReducedDto>();
         CreateMap<Friend, FriendDto>();
-        CreateMap<Group, GroupDto>();
+        CreateMap<Group, GroupDto>()
+            .ForMember(dest => dest.Balances, opt => opt.Ignore());
         CreateMap<Group, GroupReducedDto>();
         CreateMap<GroupBalance, GroupBalanceDto>();
         CreateMap<GroupJoinLink, GroupJoinLinkDto>();
