@@ -22,5 +22,10 @@ public class SplitzDbContext(DbContextOptions<SplitzDbContext> options) : Identi
             .HasMany(e => e.Friends)
             .WithOne(e => e.User)
             .HasForeignKey(e => e.UserId);
+
+        builder.Entity<SplitzUser>()
+            .HasMany(e => e.Balances)
+            .WithOne(e => e.User)
+            .HasForeignKey(e => e.UserId);
     }
 }
