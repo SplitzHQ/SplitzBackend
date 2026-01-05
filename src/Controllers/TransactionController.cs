@@ -58,12 +58,12 @@ public class TransactionController(
 
         var transaction = mapper.Map<Transaction>(transactionInputDto);
 
-        var group = await context.Groups.Include(group => group.Members)
+        var group = await context.Groups
+            .Include(group => group.Members)
+            .Include(group => group.Balances)
             .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
         if (group is null)
             return BadRequest("Group not found");
-        group.LastActivityTime = DateTime.Now;
-        group.TransactionCount++;
 
         var transactionMembers = transaction.Balances.Select(b => b.UserId);
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
@@ -74,7 +74,11 @@ public class TransactionController(
         context.Transactions.Add(transaction);
         await context.SaveChangesAsync();
 
-        await RecalculateGroupBalancesAsync(group.GroupId);
+        ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency);
+        await context.SaveChangesAsync();
+
+        group.LastActivityTime = DateTime.Now;
+        group.TransactionCount++;
         await context.SaveChangesAsync();
 
         await dbTransaction.CommitAsync();
@@ -106,6 +110,8 @@ public class TransactionController(
             .Include(t => t.Balances)
             .Include(t => t.Group)
             .ThenInclude(g => g.Members)
+            .Include(t => t.Group)
+            .ThenInclude(g => g.Balances)
             .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
 
         if (existingTransaction is null)
@@ -124,10 +130,16 @@ public class TransactionController(
 
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
+        // Revert previous balance changes
+        ApplyGroupBalanceChanges(existingTransaction.Group, existingTransaction.Balances, existingTransaction.Currency, true);
+        await context.SaveChangesAsync();
+
+        // Update transaction
         context.Entry(existingTransaction).CurrentValues.SetValues(mapper.Map<Transaction>(transactionInputDto));
         await context.SaveChangesAsync();
 
-        await RecalculateGroupBalancesAsync(existingTransaction.Group.GroupId);
+        // Apply new balance changes (existingTransaction now has updated balances)
+        ApplyGroupBalanceChanges(existingTransaction.Group, existingTransaction.Balances, existingTransaction.Currency);
         await context.SaveChangesAsync();
 
         existingTransaction.Group.LastActivityTime = DateTime.UtcNow;
@@ -154,10 +166,14 @@ public class TransactionController(
         if (user is null)
             return Unauthorized();
 
-        var transaction = await context.Transactions.FindAsync(id);
+        var transaction = await context.Transactions
+            .Include(t => t.Balances)
+            .FirstOrDefaultAsync(t => t.TransactionId == id);
         if (transaction == null) return NotFound();
 
-        var group = await context.Groups.Include(group => group.Members)
+        var group = await context.Groups
+            .Include(group => group.Members)
+            .Include(group => group.Balances)
             .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
         if (group is null)
             return BadRequest("Group not found");
@@ -167,7 +183,7 @@ public class TransactionController(
         context.Transactions.Remove(transaction);
         await context.SaveChangesAsync();
 
-        await RecalculateGroupBalancesAsync(group.GroupId);
+        ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency, true);
         await context.SaveChangesAsync();
 
         group.LastActivityTime = DateTime.UtcNow;
@@ -179,96 +195,30 @@ public class TransactionController(
         return NoContent();
     }
 
-    private async Task RecalculateGroupBalancesAsync(Guid groupId)
+    private void ApplyGroupBalanceChanges(Group group, IEnumerable<TransactionBalance> balances, string currency, bool negateDelta = false)
     {
-        var balancesSet = context.Set<GroupBalance>();
-
-        var existingBalances = await balancesSet.Where(b => b.GroupId == groupId).ToListAsync();
-        if (existingBalances.Count != 0)
-            balancesSet.RemoveRange(existingBalances);
-
-        var transactions = await context.Transactions
-            .AsNoTracking()
-            .Include(t => t.Balances)
-            .Where(t => t.GroupId == groupId)
-            .ToListAsync();
-
-        if (transactions.Count == 0)
-            return;
-
-        var currency = transactions[0].Currency;
-        if (transactions.Any(t => t.Currency != currency))
-            throw new InvalidOperationException("Group contains transactions with multiple currencies; GroupBalance does not support this.");
-
-        var net = new Dictionary<(string UserId, string FriendUserId), decimal>();
-
-        foreach (var transaction in transactions)
+        if (group.Balances == null)
         {
-            var creditors = transaction.Balances
-                .Where(b => b.Balance > 0)
-                .Select(b => (b.UserId, Amount: b.Balance))
-                .ToList();
-            var debtors = transaction.Balances
-                .Where(b => b.Balance < 0)
-                .Select(b => (b.UserId, Amount: -b.Balance))
-                .ToList();
-
-            var creditorIndex = 0;
-            var debtorIndex = 0;
-
-            while (creditorIndex < creditors.Count && debtorIndex < debtors.Count)
+            throw new InvalidOperationException("Group balances not loaded");
+        }
+        var groupBalancesDict = group.Balances.ToDictionary(b => (b.UserId, b.Currency));
+        foreach (var balance in balances)
+        {
+            if (groupBalancesDict.TryGetValue((balance.UserId, currency), out var groupBalance))
             {
-                var (creditorId, creditorAmount) = creditors[creditorIndex];
-                var (debtorId, debtorAmount) = debtors[debtorIndex];
-
-                var payAmount = creditorAmount < debtorAmount ? creditorAmount : debtorAmount;
-                if (payAmount != 0 && debtorId != creditorId)
+                groupBalance.Balance += negateDelta ? -balance.Balance : balance.Balance;
+            }
+            else
+            {
+                groupBalance = new GroupBalance
                 {
-                    AddNet(net, debtorId, creditorId, payAmount);
-                    AddNet(net, creditorId, debtorId, -payAmount);
-                }
-
-                creditorAmount -= payAmount;
-                debtorAmount -= payAmount;
-
-                creditors[creditorIndex] = (creditorId, creditorAmount);
-                debtors[debtorIndex] = (debtorId, debtorAmount);
-
-                if (creditorAmount == 0)
-                    creditorIndex++;
-                if (debtorAmount == 0)
-                    debtorIndex++;
+                    GroupId = group.GroupId,
+                    UserId = balance.UserId,
+                    Balance = negateDelta ? -balance.Balance : balance.Balance,
+                    Currency = currency
+                };
+                group.Balances.Add(groupBalance);
             }
         }
-
-        foreach (var ((userId, friendUserId), balance) in net)
-        {
-            if (balance == 0)
-                continue;
-
-            balancesSet.Add(new GroupBalance
-            {
-                GroupId = groupId,
-                UserId = userId,
-                FriendUserId = friendUserId,
-                Balance = balance,
-                Currency = currency
-            });
-        }
-    }
-
-    private static void AddNet(Dictionary<(string UserId, string FriendUserId), decimal> net, string userId,
-        string friendUserId, decimal delta)
-    {
-        var key = (userId, friendUserId);
-        if (net.TryGetValue(key, out var existing))
-            net[key] = existing + delta;
-        else
-            net[key] = delta;
-    }
-
-    private bool TransactionExists(Guid id)
-    {
-        return context.Transactions.Any(e => e.TransactionId == id);
     }
 }
