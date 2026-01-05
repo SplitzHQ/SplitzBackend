@@ -9,6 +9,7 @@ public class SplitzUser : IdentityUser
 
     public List<Friend> Friends { get; set; } = new();
     public List<Group> Groups { get; set; } = new();
+    public List<GroupBalance> Balances { get; set; } = new();
 
     public override bool Equals(object? obj)
     {
@@ -35,7 +36,7 @@ public class SplitzUserDto
 
     public List<FriendDto> Friends { get; set; } = new();
     public List<GroupReducedDto> Groups { get; set; } = new();
-    public List<GroupBalance> Balances { get; set; } = new();
+    public List<GroupBalanceDto> Balances { get; set; } = new();
 }
 
 public class SplitzUserReducedDto

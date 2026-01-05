@@ -64,6 +64,7 @@ public class Program
                 Scheme = "Bearer"
             });
             options.OperationFilter<SwaggerSecurityOperationFilter>();
+            options.SchemaFilter<DecimalAsStringSchemaFilter>();
         });
 
         // configure automapper

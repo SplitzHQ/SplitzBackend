@@ -32,6 +32,7 @@ public class AccountController(
             .Include(u => u.Friends)
             .ThenInclude(f => f.FriendUser)
             .Include(u => u.Groups)
+            .Include(u => u.Balances)
             .FirstAsync(u => u.Id == user.Id);
         return mapper.Map<SplitzUserDto>(user);
     }

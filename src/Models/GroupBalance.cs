@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SplitzBackend.Models;
 
-[PrimaryKey(nameof(GroupId), nameof(UserId), nameof(FriendUserId))]
+[PrimaryKey(nameof(GroupId), nameof(UserId))]
 public class GroupBalance
 {
     public required Guid GroupId { get; set; }
@@ -13,10 +13,6 @@ public class GroupBalance
     public required string UserId { get; set; }
 
     public SplitzUser User { get; set; } = null!;
-
-    public required string FriendUserId { get; set; }
-
-    public SplitzUser FriendUser { get; set; } = null!;
 
     public required decimal Balance { get; set; }
 
@@ -32,8 +28,6 @@ public class GroupBalanceDto
     public required Guid GroupId { get; set; }
 
     public required SplitzUserReducedDto User { get; set; }
-
-    public required SplitzUserReducedDto FriendUser { get; set; }
 
     public required decimal Balance { get; set; }
 

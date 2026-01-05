@@ -58,19 +58,30 @@ public class TransactionController(
 
         var transaction = mapper.Map<Transaction>(transactionInputDto);
 
-        var group = await context.Groups.Include(group => group.Members)
+        var group = await context.Groups
+            .Include(group => group.Members)
+            .Include(group => group.Balances)
             .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
         if (group is null)
             return BadRequest("Group not found");
-        group.LastActivityTime = DateTime.Now;
-        group.TransactionCount++;
 
         var transactionMembers = transaction.Balances.Select(b => b.UserId);
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
             return BadRequest("Balance user not in group");
 
+        await using var dbTransaction = await context.Database.BeginTransactionAsync();
+
         context.Transactions.Add(transaction);
         await context.SaveChangesAsync();
+
+        ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency);
+        await context.SaveChangesAsync();
+
+        group.LastActivityTime = DateTime.Now;
+        group.TransactionCount++;
+        await context.SaveChangesAsync();
+
+        await dbTransaction.CommitAsync();
 
         return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId }, mapper.Map<TransactionDto>(transaction));
     }
@@ -92,31 +103,49 @@ public class TransactionController(
         if (user is null)
             return Unauthorized();
 
-        var transaction = mapper.Map<Transaction>(transactionInputDto);
-
-        if (transaction.TransactionId != transactionId)
+        if (transactionInputDto.TransactionId != transactionId)
             return BadRequest("Transaction id does not match");
-        var group = await context.Groups.Include(group => group.Members)
-            .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
-        if (group is null)
-            return BadRequest("Group not found");
-        group.LastActivityTime = DateTime.Now;
-        var transactionMembers = transaction.Balances.Select(b => b.UserId);
-        if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
+
+        var existingTransaction = await context.Transactions
+            .Include(t => t.Balances)
+            .Include(t => t.Group)
+            .ThenInclude(g => g.Members)
+            .Include(t => t.Group)
+            .ThenInclude(g => g.Balances)
+            .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
+
+        if (existingTransaction is null)
+            return NotFound();
+
+        if (!existingTransaction.Group.Members.Contains(user))
+            return Unauthorized();
+
+        if (existingTransaction.GroupId != transactionInputDto.GroupId)
+            return BadRequest("Changing the group of a transaction is not allowed.");
+
+        var targetMemberIds = existingTransaction.Group.Members.Select(m => m.Id).ToHashSet();
+        var transactionMemberIds = transactionInputDto.Balances.Select(b => b.UserId);
+        if (transactionMemberIds.Any(id => !targetMemberIds.Contains(id)))
             return BadRequest("Balance user not in group");
 
-        context.Entry(transaction).State = EntityState.Modified;
+        await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
-        try
-        {
-            await context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!TransactionExists(transactionId))
-                return NotFound();
-            throw;
-        }
+        // Revert previous balance changes
+        ApplyGroupBalanceChanges(existingTransaction.Group, existingTransaction.Balances, existingTransaction.Currency, true);
+        await context.SaveChangesAsync();
+
+        // Update transaction
+        context.Entry(existingTransaction).CurrentValues.SetValues(mapper.Map<Transaction>(transactionInputDto));
+        await context.SaveChangesAsync();
+
+        // Apply new balance changes (existingTransaction now has updated balances)
+        ApplyGroupBalanceChanges(existingTransaction.Group, existingTransaction.Balances, existingTransaction.Currency);
+        await context.SaveChangesAsync();
+
+        existingTransaction.Group.LastActivityTime = DateTime.UtcNow;
+        await context.SaveChangesAsync();
+
+        await dbTransaction.CommitAsync();
 
         return NoContent();
     }
@@ -137,24 +166,59 @@ public class TransactionController(
         if (user is null)
             return Unauthorized();
 
-        var transaction = await context.Transactions.FindAsync(id);
+        var transaction = await context.Transactions
+            .Include(t => t.Balances)
+            .FirstOrDefaultAsync(t => t.TransactionId == id);
         if (transaction == null) return NotFound();
 
-        var group = await context.Groups.Include(group => group.Members)
+        var group = await context.Groups
+            .Include(group => group.Members)
+            .Include(group => group.Balances)
             .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
         if (group is null)
             return BadRequest("Group not found");
-        group.LastActivityTime = DateTime.UtcNow;
-        group.TransactionCount--;
+
+        await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
         context.Transactions.Remove(transaction);
         await context.SaveChangesAsync();
 
+        ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency, true);
+        await context.SaveChangesAsync();
+
+        group.LastActivityTime = DateTime.UtcNow;
+        group.TransactionCount--;
+        await context.SaveChangesAsync();
+
+        await dbTransaction.CommitAsync();
+
         return NoContent();
     }
 
-    private bool TransactionExists(Guid id)
+    private void ApplyGroupBalanceChanges(Group group, IEnumerable<TransactionBalance> balances, string currency, bool negateDelta = false)
     {
-        return context.Transactions.Any(e => e.TransactionId == id);
+        if (group.Balances == null)
+        {
+            throw new InvalidOperationException("Group balances not loaded");
+        }
+        var groupBalancesDict = group.Balances.ToDictionary(b => (b.UserId, b.Currency));
+        foreach (var balance in balances)
+        {
+            if (groupBalancesDict.TryGetValue((balance.UserId, currency), out var groupBalance))
+            {
+                groupBalance.Balance += negateDelta ? -balance.Balance : balance.Balance;
+            }
+            else
+            {
+                groupBalance = new GroupBalance
+                {
+                    GroupId = group.GroupId,
+                    UserId = balance.UserId,
+                    Balance = negateDelta ? -balance.Balance : balance.Balance,
+                    Currency = currency
+                };
+                group.Balances.Add(groupBalance);
+            }
+        }
     }
 }
