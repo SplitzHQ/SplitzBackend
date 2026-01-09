@@ -85,8 +85,8 @@ public class GroupController(
     [HttpPost(Name = "CreateGroup")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
-    [ProducesResponseType(200)]
     [ProducesResponseType(201)]
+    [ProducesResponseType(409)]
     public async Task<ActionResult<GroupDto>> Create(GroupInputDto groupInputDto)
     {
         var user = await userManager.GetUserAsync(User);
@@ -110,8 +110,7 @@ public class GroupController(
             .Where(g => g.MembersIdHash == group.MembersIdHash)
             .FirstOrDefaultAsync();
         if (existingGroup is not null)
-            // return existing group
-            return Ok(mapper.Map<GroupDto>(existingGroup));
+            return Conflict("A group with the same members already exists.");
 
         group.Transactions = [];
         group.Balances = [];
