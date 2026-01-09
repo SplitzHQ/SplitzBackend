@@ -2,7 +2,7 @@
 
 public class GroupJoinLink
 {
-    public required Guid GroupJoinLinkId { get; set; }
+    public Guid GroupJoinLinkId { get; set; }
 
     public required Guid GroupId { get; set; }
 
