@@ -31,7 +31,7 @@ public class SplitzUserDto
     [MinLength(1, ErrorMessage = "Username cannot be empty")]
     [MaxLength(256)]
     public required string UserName { get; set; }
-
+    public required string Email { get; set; }
     [Url][MaxLength(256)] public string? Photo { get; set; }
 
     public List<FriendDto> Friends { get; set; } = new();
