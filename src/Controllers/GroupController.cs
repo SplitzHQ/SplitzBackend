@@ -191,7 +191,7 @@ public class GroupController(
     [ProducesResponseType(200)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
-    public async Task<ActionResult<GroupJoinLink>> CreateGroupJoinLink(Guid groupId)
+    public async Task<ActionResult<GroupJoinLinkDto>> CreateGroupJoinLink(Guid groupId)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
@@ -202,7 +202,7 @@ public class GroupController(
         var link = new GroupJoinLink { GroupId = groupId, GroupJoinLinkId = Guid.NewGuid() };
         db.GroupJoinLinks.Add(link);
         await db.SaveChangesAsync();
-        return Ok(link);
+        return Ok(mapper.Map<GroupJoinLinkDto>(link));
     }
 
     /// <summary>
