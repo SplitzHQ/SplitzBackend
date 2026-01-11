@@ -105,13 +105,6 @@ public class GroupController(
         group.Members = members;
         group.UpdateMembersIdHash();
 
-        // check if group with the same member hash exists
-        var existingGroup = await db.Groups
-            .Where(g => g.MembersIdHash == group.MembersIdHash)
-            .FirstOrDefaultAsync();
-        if (existingGroup is not null)
-            return Conflict("A group with the same members already exists.");
-
         group.Transactions = [];
         group.Balances = [];
         group.LastActivityTime = DateTime.Now;
