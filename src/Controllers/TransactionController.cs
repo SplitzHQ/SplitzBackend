@@ -1,9 +1,10 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
+using SplitzBackend.Services;
 
 namespace SplitzBackend.Controllers;
 
@@ -13,7 +14,8 @@ namespace SplitzBackend.Controllers;
 public class TransactionController(
     SplitzDbContext context,
     UserManager<SplitzUser> userManager,
-    IMapper mapper) : ControllerBase
+    IMapper mapper,
+    IImageStorageService imageStorage) : ControllerBase
 {
     /// <summary>
     ///     Get transaction by id
@@ -83,7 +85,55 @@ public class TransactionController(
 
         await dbTransaction.CommitAsync();
 
-        return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId }, mapper.Map<TransactionDto>(transaction));
+        return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId },
+            mapper.Map<TransactionDto>(transaction));
+    }
+
+    /// <summary>
+    ///     Upload a receipt image for a transaction.
+    /// </summary>
+    [HttpPost("{id}/receipt", Name = "UploadTransactionReceipt")]
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(200)]
+    [RequestSizeLimit(15 * 1024 * 1024)]
+    public async Task<ActionResult<UploadImageResult>> UploadReceipt(
+        Guid id,
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        if (file.Length <= 0)
+            return BadRequest("Empty file");
+
+        var transaction = await context.Transactions
+            .Include(t => t.Group)
+            .ThenInclude(g => g.Members)
+            .FirstOrDefaultAsync(t => t.TransactionId == id, cancellationToken);
+
+        if (transaction is null)
+            return NotFound();
+        if (!transaction.Group.Members.Contains(user))
+            return Unauthorized();
+
+        var existingPhoto = transaction.Photo;
+
+        await using var input = file.OpenReadStream();
+        var result = await imageStorage.UploadProcessedImageAsync(
+            input,
+            file.ContentType,
+            $"transactions/{id}/receipt",
+            new ImageResizeRequest(2048),
+            cancellationToken);
+
+        transaction.Photo = result.Url;
+        await context.SaveChangesAsync(cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
@@ -131,7 +181,8 @@ public class TransactionController(
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
         // Revert previous balance changes
-        ApplyGroupBalanceChanges(existingTransaction.Group, existingTransaction.Balances, existingTransaction.Currency, true);
+        ApplyGroupBalanceChanges(existingTransaction.Group, existingTransaction.Balances, existingTransaction.Currency,
+            true);
         await context.SaveChangesAsync();
 
         // Update transaction
@@ -154,13 +205,14 @@ public class TransactionController(
     ///     Delete a transaction
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete("{id}", Name = "DeleteTransaction")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
     [ProducesResponseType(204)]
-    public async Task<IActionResult> DeleteTransaction(Guid id)
+    public async Task<IActionResult> DeleteTransaction(Guid id, CancellationToken cancellationToken = default)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
@@ -168,42 +220,43 @@ public class TransactionController(
 
         var transaction = await context.Transactions
             .Include(t => t.Balances)
-            .FirstOrDefaultAsync(t => t.TransactionId == id);
+            .FirstOrDefaultAsync(t => t.TransactionId == id, cancellationToken);
         if (transaction == null) return NotFound();
+
+        var receipt = transaction.Photo;
 
         var group = await context.Groups
             .Include(group => group.Members)
             .Include(group => group.Balances)
-            .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user));
+            .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user), cancellationToken);
         if (group is null)
             return BadRequest("Group not found");
 
-        await using var dbTransaction = await context.Database.BeginTransactionAsync();
+        await using var dbTransaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         context.Transactions.Remove(transaction);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency, true);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         group.LastActivityTime = DateTime.UtcNow;
         group.TransactionCount--;
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        await dbTransaction.CommitAsync();
+        await dbTransaction.CommitAsync(cancellationToken);
+
+        await imageStorage.DeleteIfOwnedAsync(receipt, cancellationToken);
 
         return NoContent();
     }
 
-    private void ApplyGroupBalanceChanges(Group group, IEnumerable<TransactionBalance> balances, string currency, bool negateDelta = false)
+    private void ApplyGroupBalanceChanges(Group group, IEnumerable<TransactionBalance> balances, string currency,
+        bool negateDelta = false)
     {
-        if (group.Balances == null)
-        {
-            throw new InvalidOperationException("Group balances not loaded");
-        }
+        if (group.Balances == null) throw new InvalidOperationException("Group balances not loaded");
         var groupBalancesDict = group.Balances.ToDictionary(b => (b.UserId, b.Currency));
         foreach (var balance in balances)
-        {
             if (groupBalancesDict.TryGetValue((balance.UserId, currency), out var groupBalance))
             {
                 groupBalance.Balance += negateDelta ? -balance.Balance : balance.Balance;
@@ -219,6 +272,5 @@ public class TransactionController(
                 };
                 group.Balances.Add(groupBalance);
             }
-        }
     }
 }

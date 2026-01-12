@@ -1,14 +1,18 @@
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
+//using Microsoft.OpenApi;
+//using Swashbuckle.AspNetCore.SwaggerGen;
 
-public class DecimalAsStringSchemaFilter : ISchemaFilter
-{
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
-    {
-        if (context.Type == typeof(decimal) || context.Type == typeof(decimal?))
-        {
-            schema.Type = "string";
-            schema.Format = "decimal";
-        }
-    }
-}
+//namespace SplitzBackend.OpenAPIGen.Filter;
+
+//public class DecimalAsStringSchemaFilter : ISchemaFilter
+//{
+//    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
+//    {
+//        if (context.Type == typeof(decimal) || context.Type == typeof(decimal?))
+//            if (schema is OpenApiSchema concrete)
+//            {
+//                concrete.Type = JsonSchemaType.String;
+//                concrete.Format = "decimal";
+//            }
+//    }
+//}
+

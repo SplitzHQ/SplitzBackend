@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.IO.Hashing;
 using System.Text;
 
@@ -13,7 +13,7 @@ public class Group
     [MaxLength(256)]
     public required string Name { get; set; }
 
-    [Url][MaxLength(256)] public string? Photo { get; set; }
+    [MaxLength(256)] public string? Photo { get; set; }
 
     public List<SplitzUser> Members { get; set; } = new();
 
@@ -54,7 +54,7 @@ public class GroupDto
     [MaxLength(256)]
     public required string Name { get; set; }
 
-    [Url][MaxLength(256)] public string? Photo { get; set; }
+    [MaxLength(256)] public string? Photo { get; set; }
 
     public required List<SplitzUserReducedDto> Members { get; set; } = new();
 
@@ -85,7 +85,7 @@ public class GroupReducedDto
     [MaxLength(256)]
     public required string Name { get; set; }
 
-    [Url][MaxLength(256)] public string? Photo { get; set; }
+    [MaxLength(256)] public string? Photo { get; set; }
 }
 
 public class GroupInputDto
@@ -94,8 +94,6 @@ public class GroupInputDto
     [MinLength(1, ErrorMessage = "Group name cannot be empty")]
     [MaxLength(256)]
     public required string Name { get; set; }
-
-    [Url][MaxLength(256)] public string? Photo { get; set; }
 
     [Required]
     [MinLength(1, ErrorMessage = "At least one member is required")]

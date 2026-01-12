@@ -9,10 +9,14 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="14.0.0" />
-    <PackageReference Include="AutoMapper.Collection" Version="11.0.0" />
-    <PackageReference Include="AutoMapper.Collection.EntityFrameworkCore" Version="11.0.0" />
+    <PackageReference Include="AutoMapper" Version="15.1.0" />
+    <PackageReference Include="AutoMapper.Collection" Version="12.0.0" />
+    <PackageReference Include="AutoMapper.Collection.EntityFrameworkCore" Version="12.0.0" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.3.8" />
+    <PackageReference Include="FluentStorage" Version="6.0.0" />
+    <PackageReference Include="FluentStorage.AWS" Version="6.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1">
       <PrivateAssets>all</PrivateAssets>
@@ -23,8 +27,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.1" />
+    <PackageReference Include="NetVips" Version="3.2.0" />
+    <PackageReference Include="NetVips.Native.linux-x64" Version="8.18.0" />
+    <PackageReference Include="NetVips.Native.win-x64" Version="8.18.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.12.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.0" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.1" />
   </ItemGroup>
 </Project>

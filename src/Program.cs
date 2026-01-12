@@ -1,10 +1,14 @@
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
+using FluentStorage;
+using FluentStorage.Blobs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 using SplitzBackend.Models;
-using System.Reflection;
+using SplitzBackend.Services;
 
 namespace SplitzBackend;
 
@@ -48,31 +52,75 @@ public class Program
             });
         });
 
-        // configure swagger
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen(options =>
+        // configure openapi
+        builder.Services.AddOpenApi(options =>
         {
-            var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-            options.SupportNonNullableReferenceTypes();
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            options.AddDocumentTransformer((document, _, _) =>
             {
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey,
-                In = ParameterLocation.Header,
-                Scheme = "Bearer"
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    Description = "Bearer token authentication",
+                    In = ParameterLocation.Header
+                });
+                document.SetReferenceHostDocument();
+                return Task.CompletedTask;
             });
-            options.OperationFilter<SwaggerSecurityOperationFilter>();
-            options.SchemaFilter<DecimalAsStringSchemaFilter>();
+            options.AddOperationTransformer((operation, context, _) =>
+            {
+                operation.Security ??= new List<OpenApiSecurityRequirement>();
+                var bearerRequirement = new OpenApiSecuritySchemeReference("Bearer");
+                operation.Security.Add(new OpenApiSecurityRequirement
+                {
+                    [bearerRequirement] = []
+                });
+                return Task.CompletedTask;
+            });
         });
 
-        // configure automapper
-        builder.Services.AddAutoMapper((serviceProvider, automapper) =>
+        // configure object storage (S3 via FluentStorage.AWS)
+        builder.Services.AddOptions<StorageOptions>()
+            .Bind(builder.Configuration.GetSection(StorageOptions.SectionName))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Bucket), "Storage:Bucket is required")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Region), "Storage:Region is required")
+            .ValidateOnStart();
+
+        builder.Services.AddSingleton<IBlobStorage>(sp =>
         {
-            automapper.AddCollectionMappers();
-            automapper.UseEntityFrameworkCoreModel<SplitzDbContext>(serviceProvider);
+            StorageFactory.Modules.UseAwsStorage();
+
+            var options = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
+            if (!options.Provider.Equals("S3", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Unsupported storage provider '{options.Provider}'.");
+            if (string.IsNullOrWhiteSpace(options.Endpoint))
+                throw new InvalidOperationException("Storage:Endpoint is required for S3.");
+
+            return StorageFactory.Blobs.AwsS3(
+                options.AccessKeyId,
+                options.SecretAccessKey,
+                null,
+                options.Bucket,
+                options.Region,
+                options.Endpoint);
+        });
+
+        builder.Services.AddSingleton<IObjectStorage, S3ObjectStorage>();
+
+        // configure automapper
+        builder.Services.AddAutoMapper((serviceProvider, cfg) =>
+        {
+            cfg.AddCollectionMappers();
+            cfg.UseEntityFrameworkCoreModel<SplitzDbContext>(serviceProvider);
+
+            // Allow AutoMapper to construct profiles/value resolvers via DI.
+            cfg.ConstructServicesUsing(serviceProvider.GetRequiredService);
         }, typeof(SplitzDbContext), typeof(MapperProfile));
+
+        builder.Services.AddSingleton<IImageProcessingService, NetVipsImageProcessingService>();
+        builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
 
         var app = builder.Build();
 
@@ -85,17 +133,18 @@ public class Program
             await db.Database.EnsureCreatedAsync();
 
             // Seed test data in development environment
-            if (app.Environment.IsDevelopment())
-            {
-                await SeedTestData(db, userManager);
-            }
+            if (app.Environment.IsDevelopment()) await SeedTestData(db, userManager);
         }
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            app.MapOpenApi();
+            app.MapScalarApiReference();
+            //app.UseSwaggerUI(options =>
+            //{
+            //    options.SwaggerEndpoint("/openapi/v1.json", "v1");
+            //});
         }
 
         app.UseCors();
@@ -111,15 +160,12 @@ public class Program
     private static async Task SeedTestData(SplitzDbContext db, UserManager<SplitzUser> userManager)
     {
         // Check if test data already exists
-        if (await db.Users.AnyAsync())
-        {
-            return; // Test data already seeded
-        }
+        if (await db.Users.AnyAsync()) return; // Test data already seeded
 
         // Create test users
         var testUsers = new List<SplitzUser>
         {
-            new SplitzUser
+            new()
             {
                 Id = Guid.NewGuid().ToString(),
                 UserName = "alice@example.com",
@@ -127,7 +173,7 @@ public class Program
                 EmailConfirmed = true,
                 Photo = "https://i.pravatar.cc/150?img=1"
             },
-            new SplitzUser
+            new()
             {
                 Id = Guid.NewGuid().ToString(),
                 UserName = "bob@example.com",
@@ -135,7 +181,7 @@ public class Program
                 EmailConfirmed = true,
                 Photo = "https://i.pravatar.cc/150?img=2"
             },
-            new SplitzUser
+            new()
             {
                 Id = Guid.NewGuid().ToString(),
                 UserName = "charlie@example.com",
@@ -143,7 +189,7 @@ public class Program
                 EmailConfirmed = true,
                 Photo = "https://i.pravatar.cc/150?img=3"
             },
-            new SplitzUser
+            new()
             {
                 Id = Guid.NewGuid().ToString(),
                 UserName = "diana@example.com",
@@ -159,9 +205,8 @@ public class Program
         {
             var result = await userManager.CreateAsync(user, defaultPassword);
             if (!result.Succeeded)
-            {
-                throw new Exception($"Failed to create user {user.UserName}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            }
+                throw new Exception(
+                    $"Failed to create user {user.UserName}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
         }
 
         // Refresh users from database to get the created IDs
@@ -171,14 +216,12 @@ public class Program
         var diana = await userManager.FindByEmailAsync("diana@example.com");
 
         if (alice == null || bob == null || charlie == null || diana == null)
-        {
             throw new Exception("Failed to retrieve created test users");
-        }
 
         // Create test groups
         var testGroups = new List<Group>
         {
-            new Group
+            new()
             {
                 GroupId = Guid.NewGuid(),
                 Name = "Weekend Trip",
@@ -188,7 +231,7 @@ public class Program
                 TransactionCount = 0,
                 LastActivityTime = DateTime.Now.AddDays(-1)
             },
-            new Group
+            new()
             {
                 GroupId = Guid.NewGuid(),
                 Name = "House Expenses",
@@ -198,7 +241,7 @@ public class Program
                 TransactionCount = 0,
                 LastActivityTime = DateTime.Now.AddDays(-3)
             },
-            new Group
+            new()
             {
                 GroupId = Guid.NewGuid(),
                 Name = "Dinner Club",
@@ -211,10 +254,7 @@ public class Program
         };
 
         // Update members hash for each group
-        foreach (var group in testGroups)
-        {
-            group.UpdateMembersIdHash();
-        }
+        foreach (var group in testGroups) group.UpdateMembersIdHash();
 
         // Add groups to database
         db.Groups.AddRange(testGroups);

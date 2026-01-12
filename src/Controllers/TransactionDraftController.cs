@@ -1,9 +1,10 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
+using SplitzBackend.Services;
 
 namespace SplitzBackend.Controllers;
 
@@ -13,7 +14,8 @@ namespace SplitzBackend.Controllers;
 public class TransactionDraftController(
     SplitzDbContext context,
     UserManager<SplitzUser> userManager,
-    IMapper mapper) : ControllerBase
+    IMapper mapper,
+    IImageStorageService imageStorage) : ControllerBase
 {
     /// <summary>
     ///     Get transaction by id
@@ -86,7 +88,7 @@ public class TransactionDraftController(
     /// <param name="transactionDraftId"></param>
     /// <param name="transactionDraftInputDto"></param>
     /// <returns></returns>
-    [HttpPut("{transactionId}", Name = "UpdateTransactionDraft")]
+    [HttpPut("{transactionDraftId}", Name = "UpdateTransactionDraft")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
@@ -133,22 +135,67 @@ public class TransactionDraftController(
     }
 
     /// <summary>
+    ///     Upload a receipt image for a transaction draft.
+    /// </summary>
+    [HttpPost("{id}/receipt", Name = "UploadTransactionDraftReceipt")]
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(200)]
+    [RequestSizeLimit(15 * 1024 * 1024)]
+    public async Task<ActionResult<UploadImageResult>> UploadReceipt(
+        Guid id,
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        if (file.Length <= 0)
+            return BadRequest("Empty file");
+
+        var draft = await context.TransactionDrafts.FirstOrDefaultAsync(t => t.TransactionDraftId == id,
+            cancellationToken);
+        if (draft is null)
+            return NotFound();
+        if (draft.UserId != user.Id)
+            return BadRequest("TransactionDraft user does not match");
+
+        var existingPhoto = draft.Photo;
+
+        await using var input = file.OpenReadStream();
+        var result = await imageStorage.UploadProcessedImageAsync(
+            input,
+            file.ContentType,
+            $"drafts/{id}/receipt",
+            new ImageResizeRequest(2048),
+            cancellationToken);
+
+        draft.Photo = result.Url;
+        await context.SaveChangesAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     ///     Delete a transaction
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete("{id}", Name = "DeleteTransactionDraft")]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
     [ProducesResponseType(204)]
-    public async Task<IActionResult> DeleteTransactionDraft(Guid id)
+    public async Task<IActionResult> DeleteTransactionDraft(Guid id, CancellationToken cancellationToken = default)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
 
-        var transactionDraft = await context.TransactionDrafts.FindAsync(id);
+        var transactionDraft = await context.TransactionDrafts.FindAsync([id], cancellationToken);
         if (transactionDraft == null) return NotFound();
 
         if (transactionDraft.UserId != user.Id)
@@ -162,8 +209,12 @@ public class TransactionDraftController(
                 return BadRequest("Group not found");
         }
 
+        var receipt = transactionDraft.Photo;
+
         context.TransactionDrafts.Remove(transactionDraft);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
+
+        await imageStorage.DeleteIfOwnedAsync(receipt, cancellationToken);
 
         return NoContent();
     }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
+using SplitzBackend.Services;
 
 namespace SplitzBackend.Controllers;
 
@@ -13,7 +14,8 @@ namespace SplitzBackend.Controllers;
 public class GroupController(
     SplitzDbContext db,
     UserManager<SplitzUser> userManager,
-    IMapper mapper)
+    IMapper mapper,
+    IImageStorageService imageStorage)
     : ControllerBase
 {
     /// <summary>
@@ -138,9 +140,83 @@ public class GroupController(
         return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
     }
 
+    /// <summary>
+    ///     Upload a group avatar image.
+    /// </summary>
+    [HttpPost("{groupId}/avatar", Name = "UploadGroupAvatar")]
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(200)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<UploadImageResult>> UploadGroupAvatar(
+        Guid groupId,
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        if (file.Length <= 0)
+            return BadRequest("Empty file");
+
+        var group = await db.Groups.Include(g => g.Members)
+            .FirstOrDefaultAsync(g => g.GroupId == groupId, cancellationToken);
+        if (group is null)
+            return NotFound();
+        if (!group.Members.Contains(user))
+            return Unauthorized();
+
+        var existingPhoto = group.Photo;
+
+        await using var input = file.OpenReadStream();
+        var result = await imageStorage.UploadProcessedImageAsync(
+            input,
+            file.ContentType,
+            $"groups/{groupId}/avatar",
+            new ImageResizeRequest(512, false),
+            cancellationToken);
+
+        group.Photo = result.Url;
+        group.LastActivityTime = DateTime.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(result);
+    }
 
     /// <summary>
-    ///    Add members to a group
+    ///     Delete a group.
+    /// </summary>
+    [HttpDelete("{groupId}", Name = "DeleteGroup")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(204)]
+    public async Task<IActionResult> DeleteGroup(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+
+        var group = await db.Groups.Include(g => g.Members)
+            .FirstOrDefaultAsync(g => g.GroupId == groupId, cancellationToken);
+        if (group is null)
+            return NotFound();
+        if (!group.Members.Contains(user))
+            return Unauthorized();
+
+        var groupPhoto = group.Photo;
+        db.Groups.Remove(group);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await imageStorage.DeleteIfOwnedAsync(groupPhoto, cancellationToken);
+
+        return NoContent();
+    }
+
+
+    /// <summary>
+    ///     Add members to a group
     /// </summary>
     /// <param name="groupId">group id</param>
     /// <param name="userIds">list of user ids</param>

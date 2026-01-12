@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
+using SplitzBackend.Services;
 
 namespace SplitzBackend.Controllers;
 
@@ -13,7 +14,8 @@ namespace SplitzBackend.Controllers;
 public class AccountController(
     SplitzDbContext db,
     UserManager<SplitzUser> userManager,
-    IMapper mapper) : ControllerBase
+    IMapper mapper,
+    IImageStorageService imageStorage) : ControllerBase
 {
     /// <summary>
     ///     Get the current user's information
@@ -52,8 +54,6 @@ public class AccountController(
             return Unauthorized();
         if (userDto.UserName is not null)
             user.UserName = userDto.UserName;
-        if (userDto.Photo is not null)
-            user.Photo = userDto.Photo;
         await db.SaveChangesAsync();
         return NoContent();
     }
@@ -143,10 +143,44 @@ public class AccountController(
         await db.SaveChangesAsync();
         return NoContent();
     }
+
+    /// <summary>
+    ///     Upload the current user's avatar image.
+    /// </summary>
+    [HttpPost("avatar", Name = "UploadUserAvatar")]
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(200)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<UploadImageResult>> UploadAvatar(
+        IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        if (file.Length <= 0)
+            return BadRequest("Empty file");
+
+        var existingPhoto = user.Photo;
+
+        await using var input = file.OpenReadStream();
+        var result = await imageStorage.UploadProcessedImageAsync(
+            input,
+            file.ContentType,
+            $"users/{user.Id}/avatar",
+            new ImageResizeRequest(512, false),
+            cancellationToken);
+
+        user.Photo = result.Url;
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(result);
+    }
 }
 
 public class SplitzUserUpdateViewModel
 {
     public string? UserName { get; set; }
-    public string? Photo { get; set; }
 }

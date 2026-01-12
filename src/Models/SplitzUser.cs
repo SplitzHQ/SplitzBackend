@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace SplitzBackend.Models;
 
 public class SplitzUser : IdentityUser
 {
-    [PersonalData][Url][MaxLength(256)] public string? Photo { get; set; }
+    [PersonalData] [MaxLength(256)] public string? Photo { get; set; }
 
     public List<Friend> Friends { get; set; } = new();
     public List<Group> Groups { get; set; } = new();
@@ -31,8 +31,9 @@ public class SplitzUserDto
     [MinLength(1, ErrorMessage = "Username cannot be empty")]
     [MaxLength(256)]
     public required string UserName { get; set; }
+
     public required string Email { get; set; }
-    [Url][MaxLength(256)] public string? Photo { get; set; }
+    [MaxLength(256)] public string? Photo { get; set; }
 
     public List<FriendDto> Friends { get; set; } = new();
     public List<GroupReducedDto> Groups { get; set; } = new();
@@ -48,5 +49,5 @@ public class SplitzUserReducedDto
     [MaxLength(256)]
     public required string UserName { get; set; }
 
-    [Url][MaxLength(256)] public string? Photo { get; set; }
+    [MaxLength(256)] public string? Photo { get; set; }
 }
