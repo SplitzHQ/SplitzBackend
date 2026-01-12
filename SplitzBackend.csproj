@@ -32,6 +32,7 @@
     <PackageReference Include="NetVips.Native.linux-x64" Version="8.18.0" />
     <PackageReference Include="NetVips.Native.win-x64" Version="8.18.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.12.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.0" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.1" />
   </ItemGroup>

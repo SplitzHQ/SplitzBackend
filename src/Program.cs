@@ -1,3 +1,4 @@
+using System.Reflection;
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using FluentStorage;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using SplitzBackend.Models;
+using SplitzBackend.OpenAPIGen.Filter;
 using SplitzBackend.Services;
 
 namespace SplitzBackend;
@@ -52,7 +54,26 @@ public class Program
             });
         });
 
-        // configure openapi
+        // configure swashbuckle (old but work well)
+        builder.Services.AddSwaggerGen(options =>
+        {
+            var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+            options.SupportNonNullableReferenceTypes();
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Description = "Bearer token authentication",
+                Type = SecuritySchemeType.Http,
+                In = ParameterLocation.Header,
+                Scheme = "bearer"
+            });
+            options.OperationFilter<SwaggerSecurityOperationFilter>();
+            options.SchemaFilter<DecimalAsStringSchemaFilter>();
+        });
+
+        // configure microsoft openapi (aspnet 10 recommended, but cannot change decimal type to string & set allow anonymous for auth)
+        // currently it is disabled in routing
         builder.Services.AddOpenApi(options =>
         {
             options.AddDocumentTransformer((document, _, _) =>
@@ -61,10 +82,11 @@ public class Program
                 document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
                 document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
                 {
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
+                    Name = "Authorization",
                     Description = "Bearer token authentication",
-                    In = ParameterLocation.Header
+                    Type = SecuritySchemeType.Http,
+                    In = ParameterLocation.Header,
+                    Scheme = "bearer"
                 });
                 document.SetReferenceHostDocument();
                 return Task.CompletedTask;
@@ -139,12 +161,14 @@ public class Program
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-            app.MapOpenApi();
+            // disable microsoft openapi for now
+            //app.MapOpenApi();
+            app.UseSwagger(options =>
+            {
+                options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
+                options.RouteTemplate = "/openapi/{documentName}.json";
+            });
             app.MapScalarApiReference();
-            //app.UseSwaggerUI(options =>
-            //{
-            //    options.SwaggerEndpoint("/openapi/v1.json", "v1");
-            //});
         }
 
         app.UseCors();
