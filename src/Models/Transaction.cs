@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace SplitzBackend.Models;
 
@@ -34,19 +34,20 @@ public class TransactionBase
     public required List<Tag> Tags { get; set; } = new();
 
     [MaxLength(128)] public string? GeoCoordinate { get; set; }
-
-    [Url][MaxLength(256)] public string? Photo { get; set; }
 }
 
 public class Transaction : TransactionBase
 {
     public required Group Group { get; set; } = null!;
 
+    [MaxLength(256)] public string? Photo { get; set; }
+
     public List<TransactionBalance> Balances { get; set; } = new();
 }
 
 public class TransactionDto : TransactionBase
 {
+    [MaxLength(256)] public string? Photo { get; set; }
     public List<TransactionBalanceDto> Balances { get; set; } = new();
 }
 

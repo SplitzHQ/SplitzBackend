@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace SplitzBackend;
+namespace SplitzBackend.OpenAPIGen.Filter;
 
 internal class SwaggerSecurityOperationFilter : IOperationFilter
 {
@@ -20,39 +20,16 @@ internal class SwaggerSecurityOperationFilter : IOperationFilter
             .OfType<AllowAnonymousAttribute>()
             .Any();
 
-        // Check if this is a login or register endpoint from the identity API
-        //var isLoginOrRegisterEndpoint = false;
-        //if (context.ApiDescription?.RelativePath != null)
-        //{
-        //    var path = context.ApiDescription.RelativePath.ToLower();
-        //    isLoginOrRegisterEndpoint =
-        //        path.Contains("account/login") ||
-        //        path.Contains("account/register");
-        //}
-
-        // Remove security requirements if:
-        // 1. Not explicitly authorized OR
-        // 2. Marked as allow anonymous OR
-        // 3. Is a login/register endpoint
         if (hasAuthorize && !hasAllowAnonymous)
-        {
             operation.Security = new List<OpenApiSecurityRequirement>
             {
                 new()
                 {
                     {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
+                        new OpenApiSecuritySchemeReference("Bearer", context.Document),
                         []
                     }
                 }
             };
-        }
     }
 }

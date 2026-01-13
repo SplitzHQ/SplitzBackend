@@ -1,4 +1,4 @@
-﻿namespace SplitzBackend.Models;
+namespace SplitzBackend.Models;
 
 public class GroupJoinLink
 {

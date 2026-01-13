@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace SplitzBackend.Models;
 
@@ -15,9 +15,10 @@ public class Friend
     public SplitzUser FriendUser { get; set; } = null!;
 
     /// <summary>
-    /// A nickname about the friendship.
+    ///     A nickname about the friendship.
     /// </summary>
-    [MaxLength(256)] public string? Remark { get; set; }
+    [MaxLength(256)]
+    public string? Remark { get; set; }
 }
 
 public class FriendDto
@@ -25,7 +26,8 @@ public class FriendDto
     public required SplitzUserReducedDto FriendUser { get; set; }
 
     /// <summary>
-    /// A nickname about the friendship.
+    ///     A nickname about the friendship.
     /// </summary>
-    [MaxLength(256)] public string? Remark { get; set; }
+    [MaxLength(256)]
+    public string? Remark { get; set; }
 }
