@@ -5,7 +5,7 @@ namespace SplitzBackend.Models;
 
 public class SplitzUser : IdentityUser
 {
-    [PersonalData] [MaxLength(256)] public string? Photo { get; set; }
+    [PersonalData][MaxLength(256)] public string? Photo { get; set; }
 
     public List<Friend> Friends { get; set; } = new();
     public List<Group> Groups { get; set; } = new();
