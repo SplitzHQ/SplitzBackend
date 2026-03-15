@@ -15,7 +15,8 @@ public class TransactionController(
     SplitzDbContext context,
     UserManager<SplitzUser> userManager,
     IMapper mapper,
-    IImageStorageService imageStorage) : ControllerBase
+    IImageStorageService imageStorage,
+    IInvoiceDebtService invoiceDebtService) : ControllerBase
 {
     /// <summary>
     ///     Get transaction by id
@@ -185,8 +186,16 @@ public class TransactionController(
             true);
         await context.SaveChangesAsync();
 
+        // Preserve fields not present in TransactionInputDto before overwriting
+        var preservedInvoiceId = existingTransaction.InvoiceId;
+        var preservedPhoto = existingTransaction.Photo;
+
         // Update transaction
         context.Entry(existingTransaction).CurrentValues.SetValues(mapper.Map<Transaction>(transactionInputDto));
+
+        // Restore non-input fields that SetValues would have nulled out
+        existingTransaction.InvoiceId = preservedInvoiceId;
+        existingTransaction.Photo = preservedPhoto;
         await context.SaveChangesAsync();
 
         // Apply new balance changes (existingTransaction now has updated balances)
@@ -195,6 +204,10 @@ public class TransactionController(
 
         existingTransaction.Group.LastActivityTime = DateTime.UtcNow;
         await context.SaveChangesAsync();
+
+        // Recalculate invoice debts if transaction belongs to an invoice
+        if (existingTransaction.InvoiceId is not null)
+            await invoiceDebtService.RecalculateInvoiceDebtsAsync(existingTransaction.InvoiceId.Value);
 
         await dbTransaction.CommitAsync();
 
@@ -224,6 +237,7 @@ public class TransactionController(
         if (transaction == null) return NotFound();
 
         var receipt = transaction.Photo;
+        var invoiceId = transaction.InvoiceId;
 
         var group = await context.Groups
             .Include(group => group.Members)
@@ -243,6 +257,10 @@ public class TransactionController(
         group.LastActivityTime = DateTime.UtcNow;
         group.TransactionCount--;
         await context.SaveChangesAsync(cancellationToken);
+
+        // Recalculate invoice debts if transaction belonged to an invoice
+        if (invoiceId is not null)
+            await invoiceDebtService.RecalculateInvoiceDebtsAsync(invoiceId.Value);
 
         await dbTransaction.CommitAsync(cancellationToken);
 

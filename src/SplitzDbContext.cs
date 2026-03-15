@@ -14,6 +14,10 @@ public class SplitzDbContext(DbContextOptions<SplitzDbContext> options) : Identi
 
     public DbSet<TransactionDraft> TransactionDrafts { get; set; } = null!;
 
+    public DbSet<Invoice> Invoices { get; set; } = null!;
+
+    public DbSet<Notification> Notifications { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
