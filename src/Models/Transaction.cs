@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SplitzBackend.Models;
 
@@ -42,6 +43,7 @@ public class Transaction : TransactionBase
 
     public Guid? InvoiceId { get; set; }
 
+    [ForeignKey(nameof(InvoiceId))]
     public Invoice? Invoice { get; set; }
 
     [MaxLength(256)] public string? Photo { get; set; }

@@ -112,7 +112,6 @@ namespace SplitzBackend.src.Migrations
                     ToUserId = table.Column<string>(type: "TEXT", nullable: false),
                     Amount = table.Column<decimal>(type: "TEXT", nullable: false),
                     RecordedByUserId = table.Column<string>(type: "TEXT", nullable: false),
-                    RecordedById = table.Column<string>(type: "TEXT", nullable: false),
                     RecordedTime = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -125,8 +124,8 @@ namespace SplitzBackend.src.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_InvoiceSettlement_AspNetUsers_RecordedById",
-                        column: x => x.RecordedById,
+                        name: "FK_InvoiceSettlement_AspNetUsers_RecordedByUserId",
+                        column: x => x.RecordedByUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -180,9 +179,9 @@ namespace SplitzBackend.src.Migrations
                 column: "InvoiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InvoiceSettlement_RecordedById",
+                name: "IX_InvoiceSettlement_RecordedByUserId",
                 table: "InvoiceSettlement",
-                column: "RecordedById");
+                column: "RecordedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InvoiceSettlement_ToUserId",

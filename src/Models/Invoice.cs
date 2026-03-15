@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace SplitzBackend.Models;
@@ -15,6 +16,7 @@ public class Invoice
 
     public required Guid GroupId { get; set; }
 
+    [ForeignKey(nameof(GroupId))]
     public Group Group { get; set; } = null!;
 
     [MaxLength(256)] public string? Name { get; set; }
@@ -27,6 +29,7 @@ public class Invoice
 
     public required string CreatedByUserId { get; set; }
 
+    [ForeignKey(nameof(CreatedByUserId))]
     public SplitzUser CreatedBy { get; set; } = null!;
 
     public required DateTime CreateTime { get; set; }
@@ -45,14 +48,17 @@ public class InvoiceDebt
 {
     public required Guid InvoiceId { get; set; }
 
+    [ForeignKey(nameof(InvoiceId))]
     public Invoice Invoice { get; set; } = null!;
 
     public required string FromUserId { get; set; }
 
+    [ForeignKey(nameof(FromUserId))]
     public SplitzUser FromUser { get; set; } = null!;
 
     public required string ToUserId { get; set; }
 
+    [ForeignKey(nameof(ToUserId))]
     public SplitzUser ToUser { get; set; } = null!;
 
     [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
@@ -65,14 +71,17 @@ public class InvoiceSettlement
 
     public required Guid InvoiceId { get; set; }
 
+    [ForeignKey(nameof(InvoiceId))]
     public Invoice Invoice { get; set; } = null!;
 
     public required string FromUserId { get; set; }
 
+    [ForeignKey(nameof(FromUserId))]
     public SplitzUser FromUser { get; set; } = null!;
 
     public required string ToUserId { get; set; }
 
+    [ForeignKey(nameof(ToUserId))]
     public SplitzUser ToUser { get; set; } = null!;
 
     [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
@@ -80,6 +89,7 @@ public class InvoiceSettlement
 
     public required string RecordedByUserId { get; set; }
 
+    [ForeignKey(nameof(RecordedByUserId))]
     public SplitzUser RecordedBy { get; set; } = null!;
 
     public required DateTime RecordedTime { get; set; }

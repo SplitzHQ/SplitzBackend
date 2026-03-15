@@ -325,10 +325,6 @@ namespace SplitzBackend.src.Migrations
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("RecordedById")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("RecordedByUserId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -346,7 +342,7 @@ namespace SplitzBackend.src.Migrations
 
                     b.HasIndex("InvoiceId");
 
-                    b.HasIndex("RecordedById");
+                    b.HasIndex("RecordedByUserId");
 
                     b.HasIndex("ToUserId");
 
@@ -806,7 +802,7 @@ namespace SplitzBackend.src.Migrations
 
                     b.HasOne("SplitzBackend.Models.SplitzUser", "RecordedBy")
                         .WithMany()
-                        .HasForeignKey("RecordedById")
+                        .HasForeignKey("RecordedByUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

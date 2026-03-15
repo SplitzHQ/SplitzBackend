@@ -31,37 +31,5 @@ public class SplitzDbContext(DbContextOptions<SplitzDbContext> options) : Identi
             .HasMany(e => e.Balances)
             .WithOne(e => e.User)
             .HasForeignKey(e => e.UserId);
-
-        builder.Entity<Invoice>()
-            .HasOne(e => e.Group)
-            .WithMany()
-            .HasForeignKey(e => e.GroupId);
-
-        builder.Entity<Invoice>()
-            .HasOne(e => e.CreatedBy)
-            .WithMany()
-            .HasForeignKey(e => e.CreatedByUserId);
-
-        builder.Entity<Invoice>()
-            .HasMany(e => e.Transactions)
-            .WithOne(e => e.Invoice)
-            .HasForeignKey(e => e.InvoiceId);
-
-        builder.Entity<Invoice>()
-            .HasMany(e => e.Debts)
-            .WithOne(e => e.Invoice)
-            .HasForeignKey(e => e.InvoiceId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Entity<Invoice>()
-            .HasMany(e => e.Settlements)
-            .WithOne(e => e.Invoice)
-            .HasForeignKey(e => e.InvoiceId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Entity<Notification>()
-            .HasOne(e => e.User)
-            .WithMany()
-            .HasForeignKey(e => e.UserId);
     }
 }
