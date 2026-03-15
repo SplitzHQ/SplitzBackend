@@ -186,8 +186,16 @@ public class TransactionController(
             true);
         await context.SaveChangesAsync();
 
+        // Preserve fields not present in TransactionInputDto before overwriting
+        var preservedInvoiceId = existingTransaction.InvoiceId;
+        var preservedPhoto = existingTransaction.Photo;
+
         // Update transaction
         context.Entry(existingTransaction).CurrentValues.SetValues(mapper.Map<Transaction>(transactionInputDto));
+
+        // Restore non-input fields that SetValues would have nulled out
+        existingTransaction.InvoiceId = preservedInvoiceId;
+        existingTransaction.Photo = preservedPhoto;
         await context.SaveChangesAsync();
 
         // Apply new balance changes (existingTransaction now has updated balances)
