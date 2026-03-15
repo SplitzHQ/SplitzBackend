@@ -151,8 +151,8 @@ public class Program
             var db = scope.ServiceProvider.GetRequiredService<SplitzDbContext>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<SplitzUser>>();
 
-            // Ensure database is created
-            await db.Database.EnsureCreatedAsync();
+            // Apply pending migrations (creates database if it doesn't exist)
+            await db.Database.MigrateAsync();
 
             // Seed test data in development environment
             if (app.Environment.IsDevelopment()) await SeedTestData(db, userManager);
