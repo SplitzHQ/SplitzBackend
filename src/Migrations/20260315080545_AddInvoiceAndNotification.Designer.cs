@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SplitzBackend;
 
@@ -10,9 +11,11 @@ using SplitzBackend;
 namespace SplitzBackend.src.Migrations
 {
     [DbContext(typeof(SplitzDbContext))]
-    partial class SplitzDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260315080545_AddInvoiceAndNotification")]
+    partial class AddInvoiceAndNotification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.1");

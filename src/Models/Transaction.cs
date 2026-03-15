@@ -40,6 +40,10 @@ public class Transaction : TransactionBase
 {
     public required Group Group { get; set; } = null!;
 
+    public Guid? InvoiceId { get; set; }
+
+    public Invoice? Invoice { get; set; }
+
     [MaxLength(256)] public string? Photo { get; set; }
 
     public List<TransactionBalance> Balances { get; set; } = new();
@@ -47,6 +51,8 @@ public class Transaction : TransactionBase
 
 public class TransactionDto : TransactionBase
 {
+    public Guid? InvoiceId { get; set; }
+
     [MaxLength(256)] public string? Photo { get; set; }
     public List<TransactionBalanceDto> Balances { get; set; } = new();
 }

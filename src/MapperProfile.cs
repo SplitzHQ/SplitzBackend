@@ -30,6 +30,13 @@ public class MapperProfile : Profile
 
         CreateMap<TransactionDraftBalance, TransactionDraftBalanceDto>();
 
+        CreateMap<Invoice, InvoiceDto>();
+        CreateMap<Invoice, InvoiceReducedDto>();
+        CreateMap<InvoiceDebt, InvoiceDebtDto>();
+        CreateMap<InvoiceSettlement, InvoiceSettlementDto>();
+        CreateMap<Notification, NotificationDto>()
+            .ForMember(d => d.Data, opt => opt.MapFrom(s => s.GetTypedData() ?? (object)s.Data));
+
         CreateMap<GroupInputDto, Group>();
         CreateMap<TransactionInputDto, Transaction>();
         CreateMap<TransactionBalanceInputDto, TransactionBalance>();
