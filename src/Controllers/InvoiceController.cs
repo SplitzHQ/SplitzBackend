@@ -331,8 +331,7 @@ public class InvoiceController(
         context.Set<InvoiceSettlement>().Add(settlement);
 
         // Check if all debts are settled
-        var allSettlements = invoice.Settlements.Concat(new[] { settlement }).ToList();
-        invoice.Status = invoiceDebtService.CheckIfSettled(invoice.Debts, allSettlements)
+        invoice.Status = invoiceDebtService.CheckIfSettled(invoice.Debts, invoice.Settlements.ToList())
             ? InvoiceStatus.Settled
             : InvoiceStatus.Open;
 
