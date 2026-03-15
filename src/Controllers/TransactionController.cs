@@ -15,7 +15,8 @@ public class TransactionController(
     SplitzDbContext context,
     UserManager<SplitzUser> userManager,
     IMapper mapper,
-    IImageStorageService imageStorage) : ControllerBase
+    IImageStorageService imageStorage,
+    IInvoiceDebtService invoiceDebtService) : ControllerBase
 {
     /// <summary>
     ///     Get transaction by id
@@ -198,7 +199,7 @@ public class TransactionController(
 
         // Recalculate invoice debts if transaction belongs to an invoice
         if (existingTransaction.InvoiceId is not null)
-            await InvoiceController.RecalculateInvoiceDebts(context, existingTransaction.InvoiceId.Value);
+            await invoiceDebtService.RecalculateInvoiceDebtsAsync(existingTransaction.InvoiceId.Value);
 
         await dbTransaction.CommitAsync();
 
@@ -251,7 +252,7 @@ public class TransactionController(
 
         // Recalculate invoice debts if transaction belonged to an invoice
         if (invoiceId is not null)
-            await InvoiceController.RecalculateInvoiceDebts(context, invoiceId.Value);
+            await invoiceDebtService.RecalculateInvoiceDebtsAsync(invoiceId.Value);
 
         await dbTransaction.CommitAsync(cancellationToken);
 
