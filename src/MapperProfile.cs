@@ -15,8 +15,10 @@ public class MapperProfile : Profile
             .ForMember(d => d.Photo, opt => opt.MapFrom<SignedPhotoUrlResolver, string?>(s => s.Photo));
 
         CreateMap<Friend, FriendDto>();
-        CreateMap<Group, GroupDto>();
-        CreateMap<Group, GroupReducedDto>();
+        CreateMap<Group, GroupDto>()
+            .ForMember(d => d.Photo, opt => opt.MapFrom<SignedPhotoUrlResolver, string?>(s => s.Photo));
+        CreateMap<Group, GroupReducedDto>()
+            .ForMember(d => d.Photo, opt => opt.MapFrom<SignedPhotoUrlResolver, string?>(s => s.Photo));
         CreateMap<GroupBalance, GroupBalanceDto>();
         CreateMap<GroupJoinLink, GroupJoinLinkDto>();
 

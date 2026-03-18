@@ -33,13 +33,14 @@ public class TransactionDraftController(
         if (user is null)
             return Unauthorized();
 
-        var transaction =
-            await mapper.ProjectTo<TransactionDraftDto>(context.TransactionDrafts.Where(t =>
-                t.User.Id == user.Id && t.TransactionDraftId == id)).FirstOrDefaultAsync();
+        var transaction = await context.TransactionDrafts
+            .Where(t => t.User.Id == user.Id && t.TransactionDraftId == id)
+            .Include(t => t.Balances).ThenInclude(b => b.User)
+            .FirstOrDefaultAsync();
 
-        if (transaction == null) return NotFound();
+        if (transaction is null) return NotFound();
 
-        return transaction;
+        return mapper.Map<TransactionDraftDto>(transaction);
     }
 
     /// <summary>
