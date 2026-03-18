@@ -35,11 +35,9 @@ public class NotificationController(
         if (!includeDismissed)
             query = query.Where(n => !n.IsDismissed);
 
-        var notifications = await mapper.ProjectTo<NotificationDto>(
-            query.OrderByDescending(n => n.CreateTime)
-        ).ToListAsync();
+        var notifications = await query.OrderByDescending(n => n.CreateTime).ToListAsync();
 
-        return notifications;
+        return mapper.Map<List<NotificationDto>>(notifications);
     }
 
     /// <summary>

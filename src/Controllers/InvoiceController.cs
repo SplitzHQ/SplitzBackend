@@ -31,12 +31,13 @@ public class InvoiceController(
         if (user is null)
             return Unauthorized();
 
-        var invoices = await mapper.ProjectTo<InvoiceReducedDto>(
-            context.Invoices.Where(i => i.Group.Members.Contains(user))
-                .OrderByDescending(i => i.CreateTime)
-        ).ToListAsync();
+        var invoices = await context.Invoices
+            .Where(i => i.Group.Members.Contains(user))
+            .OrderByDescending(i => i.CreateTime)
+            .Include(i => i.CreatedBy)
+            .ToListAsync();
 
-        return invoices;
+        return mapper.Map<List<InvoiceReducedDto>>(invoices);
     }
 
     /// <summary>
@@ -53,14 +54,21 @@ public class InvoiceController(
         if (user is null)
             return Unauthorized();
 
-        var invoice = await mapper.ProjectTo<InvoiceDto>(
-            context.Invoices.Where(i => i.Group.Members.Contains(user) && i.InvoiceId == id)
-        ).FirstOrDefaultAsync();
+        var invoice = await context.Invoices
+            .Where(i => i.Group.Members.Contains(user) && i.InvoiceId == id)
+            .Include(i => i.CreatedBy)
+            .Include(i => i.Transactions).ThenInclude(t => t.Balances).ThenInclude(b => b.User)
+            .Include(i => i.Debts).ThenInclude(d => d.FromUser)
+            .Include(i => i.Debts).ThenInclude(d => d.ToUser)
+            .Include(i => i.Settlements).ThenInclude(s => s.FromUser)
+            .Include(i => i.Settlements).ThenInclude(s => s.ToUser)
+            .Include(i => i.Settlements).ThenInclude(s => s.RecordedBy)
+            .FirstOrDefaultAsync();
 
         if (invoice is null)
             return NotFound();
 
-        return invoice;
+        return mapper.Map<InvoiceDto>(invoice);
     }
 
     /// <summary>
@@ -151,11 +159,18 @@ public class InvoiceController(
         await context.SaveChangesAsync();
 
         // Reload for proper DTO mapping with navigation properties
-        var result = await mapper.ProjectTo<InvoiceDto>(
-            context.Invoices.Where(i => i.InvoiceId == invoice.InvoiceId)
-        ).FirstAsync();
+        var result = await context.Invoices
+            .Where(i => i.InvoiceId == invoice.InvoiceId)
+            .Include(i => i.CreatedBy)
+            .Include(i => i.Transactions).ThenInclude(t => t.Balances).ThenInclude(b => b.User)
+            .Include(i => i.Debts).ThenInclude(d => d.FromUser)
+            .Include(i => i.Debts).ThenInclude(d => d.ToUser)
+            .Include(i => i.Settlements).ThenInclude(s => s.FromUser)
+            .Include(i => i.Settlements).ThenInclude(s => s.ToUser)
+            .Include(i => i.Settlements).ThenInclude(s => s.RecordedBy)
+            .FirstAsync();
 
-        return CreatedAtAction(nameof(GetInvoice), new { id = invoice.InvoiceId }, result);
+        return CreatedAtAction(nameof(GetInvoice), new { id = invoice.InvoiceId }, mapper.Map<InvoiceDto>(result));
     }
 
     /// <summary>
@@ -401,12 +416,14 @@ public class InvoiceController(
 
         await context.SaveChangesAsync();
 
-        var result = await mapper.ProjectTo<InvoiceSettlementDto>(
-            context.Set<InvoiceSettlement>()
-                .Where(s => s.InvoiceSettlementId == settlement.InvoiceSettlementId)
-        ).FirstAsync();
+        var result = await context.Set<InvoiceSettlement>()
+            .Where(s => s.InvoiceSettlementId == settlement.InvoiceSettlementId)
+            .Include(s => s.FromUser)
+            .Include(s => s.ToUser)
+            .Include(s => s.RecordedBy)
+            .FirstAsync();
 
-        return CreatedAtAction(nameof(GetInvoice), new { id = invoice.InvoiceId }, result);
+        return CreatedAtAction(nameof(GetInvoice), new { id = invoice.InvoiceId }, mapper.Map<InvoiceSettlementDto>(result));
     }
 
     /// <summary>

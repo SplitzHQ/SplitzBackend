@@ -34,13 +34,14 @@ public class TransactionController(
         if (user is null)
             return Unauthorized();
 
-        var transaction =
-            await mapper.ProjectTo<TransactionDto>(context.Transactions.Where(t =>
-                t.Group.Members.Contains(user) && t.TransactionId == id)).FirstOrDefaultAsync();
+        var transaction = await context.Transactions
+            .Where(t => t.Group.Members.Contains(user) && t.TransactionId == id)
+            .Include(t => t.Balances).ThenInclude(b => b.User)
+            .FirstOrDefaultAsync();
 
-        if (transaction == null) return NotFound();
+        if (transaction is null) return NotFound();
 
-        return transaction;
+        return mapper.Map<TransactionDto>(transaction);
     }
 
     /// <summary>

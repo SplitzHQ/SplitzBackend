@@ -31,8 +31,13 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        var groups = db.Groups.Where(g => g.Members.Contains(user));
-        return await mapper.ProjectTo<GroupDto>(groups).ToListAsync();
+        var groups = await db.Groups
+            .Where(g => g.Members.Contains(user))
+            .Include(g => g.Members)
+            .Include(g => g.Balances)
+            .OrderByDescending(g => g.LastActivityTime)
+            .ToListAsync();
+        return mapper.Map<List<GroupDto>>(groups);
     }
 
     /// <summary>
@@ -49,12 +54,14 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        var group = await mapper
-            .ProjectTo<GroupDto>(db.Groups.Where(g => g.Members.Contains(user) && g.GroupId == groupId))
+        var group = await db.Groups
+            .Where(g => g.Members.Contains(user) && g.GroupId == groupId)
+            .Include(g => g.Members)
+            .Include(g => g.Balances)
             .FirstOrDefaultAsync();
         if (group is null)
             return NotFound();
-        return group;
+        return mapper.Map<GroupDto>(group);
     }
 
     /// <summary>
@@ -72,11 +79,16 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        var group = db.Groups.Where(g => g.Members.Contains(user) && g.GroupId == groupId);
-        if (await group.FirstOrDefaultAsync() is null)
+        var group = await db.Groups
+            .Where(g => g.Members.Contains(user) && g.GroupId == groupId)
+            .FirstOrDefaultAsync();
+        if (group is null)
             return NotFound();
-        var transactions = group.SelectMany(g => g.Transactions);
-        return await mapper.ProjectTo<TransactionDto>(transactions).ToListAsync();
+        var transactions = await db.Transactions
+            .Where(t => t.GroupId == groupId)
+            .Include(t => t.Balances).ThenInclude(b => b.User)
+            .ToListAsync();
+        return mapper.Map<List<TransactionDto>>(transactions);
     }
 
     /// <summary>
