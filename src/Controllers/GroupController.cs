@@ -179,7 +179,7 @@ public class GroupController(
             new ImageResizeRequest(512, false),
             cancellationToken);
 
-        group.Photo = result.Url;
+        group.Photo = result.ObjectKey;
         group.LastActivityTime = DateTime.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
         return Ok(result);

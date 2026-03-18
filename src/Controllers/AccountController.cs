@@ -174,7 +174,7 @@ public class AccountController(
             new ImageResizeRequest(512, false),
             cancellationToken);
 
-        user.Photo = result.Url;
+        user.Photo = result.ObjectKey;
         await db.SaveChangesAsync(cancellationToken);
         return Ok(result);
     }

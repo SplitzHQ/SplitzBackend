@@ -132,7 +132,7 @@ public class TransactionController(
             new ImageResizeRequest(2048),
             cancellationToken);
 
-        transaction.Photo = result.Url;
+        transaction.Photo = result.ObjectKey;
         await context.SaveChangesAsync(cancellationToken);
         return Ok(result);
     }
