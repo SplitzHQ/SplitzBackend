@@ -34,7 +34,7 @@ public sealed class ImageStorageService(IImageProcessingService imageProcessing,
             : objectKey + processed.FileExtension;
         await objectStorage.UploadAsync(keyWithExt, processed.ContentType, processed.Stream,
             cancellationToken);
-        return new UploadImageResult( keyWithExt, processed.ContentType);
+        return new UploadImageResult(keyWithExt, processed.ContentType);
     }
 
     public Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken)
