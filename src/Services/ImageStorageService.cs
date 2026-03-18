@@ -1,7 +1,6 @@
 namespace SplitzBackend.Services;
 
 public sealed record UploadImageResult(
-    string Url,
     string ObjectKey,
     string ContentType
 );
@@ -33,9 +32,9 @@ public sealed class ImageStorageService(IImageProcessingService imageProcessing,
         var keyWithExt = objectKey.EndsWith(processed.FileExtension, StringComparison.OrdinalIgnoreCase)
             ? objectKey
             : objectKey + processed.FileExtension;
-        var url = await objectStorage.UploadAsync(keyWithExt, processed.ContentType, processed.Stream,
+        await objectStorage.UploadAsync(keyWithExt, processed.ContentType, processed.Stream,
             cancellationToken);
-        return new UploadImageResult(url, keyWithExt, processed.ContentType);
+        return new UploadImageResult(keyWithExt, processed.ContentType);
     }
 
     public Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken)

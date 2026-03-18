@@ -7,7 +7,7 @@ namespace SplitzBackend.Services;
 
 public interface IObjectStorage
 {
-    Task<string> UploadAsync(string objectKey, string contentType, Stream content, CancellationToken cancellationToken);
+    Task UploadAsync(string objectKey, string contentType, Stream content, CancellationToken cancellationToken);
     Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken);
     string BuildPublicUrl(string objectKey);
     bool TryParseObjectKey(string? storedUrlOrKey, out string objectKey);
@@ -17,11 +17,10 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
 {
     private readonly StorageOptions _options = options.Value;
 
-    public async Task<string> UploadAsync(string objectKey, string contentType, Stream content,
+    public async Task UploadAsync(string objectKey, string contentType, Stream content,
         CancellationToken cancellationToken)
     {
         await blobStorage.WriteAsync(objectKey, content, cancellationToken: cancellationToken);
-        return BuildPublicUrl(objectKey);
     }
 
     public async Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken)
@@ -127,37 +126,7 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
         if (string.IsNullOrWhiteSpace(storedUrlOrKey))
             return false;
 
-        // Our canonical internal form: "s3://bucket/key".
-        if (storedUrlOrKey.StartsWith("s3://", StringComparison.OrdinalIgnoreCase))
-        {
-            var withoutScheme = storedUrlOrKey["s3://".Length..];
-            var slash = withoutScheme.IndexOf('/');
-            if (slash <= 0)
-                return false;
-            var bucket = withoutScheme[..slash];
-            if (!bucket.Equals(_options.Bucket, StringComparison.OrdinalIgnoreCase))
-                return false;
-            objectKey = withoutScheme[(slash + 1)..];
-            return !string.IsNullOrWhiteSpace(objectKey);
-        }
-
-        // If it's a URL, accept only if host matches our endpoint.
-        if (Uri.TryCreate(storedUrlOrKey, UriKind.Absolute, out var uri))
-        {
-            if (!Uri.TryCreate(_options.Endpoint, UriKind.Absolute, out var endpointUri))
-                return false;
-            if (!string.Equals(uri.Host, endpointUri.Host, StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            // Expected path: /{bucket}/{key}
-            var path = uri.AbsolutePath.TrimStart('/');
-            if (!path.StartsWith(_options.Bucket + "/", StringComparison.OrdinalIgnoreCase))
-                return false;
-            objectKey = path[(_options.Bucket.Length + 1)..];
-            return !string.IsNullOrWhiteSpace(objectKey);
-        }
-
-        // Otherwise, treat as a raw key only if it looks like one of ours.
+        // treat as a raw key only if it looks like one of ours.
         // (Avoid deleting arbitrary external URLs already stored in Photo.)
         if (storedUrlOrKey.StartsWith("users/", StringComparison.OrdinalIgnoreCase) ||
             storedUrlOrKey.StartsWith("groups/", StringComparison.OrdinalIgnoreCase) ||

@@ -173,7 +173,7 @@ public class TransactionDraftController(
             new ImageResizeRequest(2048),
             cancellationToken);
 
-        draft.Photo = result.Url;
+        draft.Photo = result.ObjectKey;
         await context.SaveChangesAsync(cancellationToken);
         return Ok(result);
     }
