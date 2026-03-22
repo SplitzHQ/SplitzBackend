@@ -135,6 +135,7 @@ public class TransactionController(
 
         transaction.Photo = result.ObjectKey;
         await context.SaveChangesAsync(cancellationToken);
+        await imageStorage.DeleteIfOwnedAsync(existingPhoto, cancellationToken);
         return Ok(result);
     }
 

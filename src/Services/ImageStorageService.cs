@@ -29,9 +29,10 @@ public sealed class ImageStorageService(IImageProcessingService imageProcessing,
     {
         await using var processedImageStream = new MemoryStream();
         var processed = await imageProcessing.ProcessAsync(input, processedImageStream, resize, cancellationToken);
-        var keyWithExt = objectKey.EndsWith(processed.FileExtension, StringComparison.OrdinalIgnoreCase)
-            ? objectKey
-            : objectKey + processed.FileExtension;
+        // Append a Unix timestamp before the file extension so each upload produces a unique key,
+        // allowing the previous pre-signed URL to remain cached while the new URL busts the cache.
+        var versionedKey = $"{objectKey}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+        var keyWithExt = versionedKey + processed.FileExtension;
         await objectStorage.UploadAsync(keyWithExt, processed.ContentType, processed.Stream,
             cancellationToken);
         return new UploadImageResult(keyWithExt, processed.ContentType);
