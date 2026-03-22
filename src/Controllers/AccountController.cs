@@ -176,6 +176,7 @@ public class AccountController(
 
         user.Photo = result.ObjectKey;
         await db.SaveChangesAsync(cancellationToken);
+        await imageStorage.DeleteIfOwnedAsync(existingPhoto, cancellationToken);
         return Ok(result);
     }
 }

@@ -50,14 +50,26 @@ public class MapperProfile : Profile
 public sealed class SignedPhotoUrlResolver(IObjectStorage objectStorage)
     : IMemberValueResolver<object, object, string?, string?>
 {
+    private static readonly TimeSpan PublicRounding = TimeSpan.FromHours(1);
+    private const string PublicCacheControl = "public, max-age=3600";
+
+    private static readonly TimeSpan PrivateRounding = TimeSpan.FromMinutes(15);
+    private const string PrivateCacheControl = "private, max-age=900";
+
     public string? Resolve(object source, object destination, string? sourceMember, string? destMember,
         ResolutionContext context)
     {
         if (string.IsNullOrWhiteSpace(sourceMember))
             return sourceMember;
 
-        return objectStorage.TryParseObjectKey(sourceMember, out var objectKey)
-            ? objectStorage.BuildPublicUrl(objectKey)
-            : sourceMember;
+        if (!objectStorage.TryParseObjectKey(sourceMember, out var objectKey))
+            return sourceMember;
+
+        var isPublic = objectKey.StartsWith("users/", StringComparison.OrdinalIgnoreCase) ||
+                       objectKey.StartsWith("groups/", StringComparison.OrdinalIgnoreCase);
+
+        return isPublic
+            ? objectStorage.BuildPublicUrl(objectKey, PublicRounding, PublicCacheControl)
+            : objectStorage.BuildPublicUrl(objectKey, PrivateRounding, PrivateCacheControl);
     }
 }
