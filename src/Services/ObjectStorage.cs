@@ -9,7 +9,7 @@ public interface IObjectStorage
 {
     Task UploadAsync(string objectKey, string contentType, Stream content, CancellationToken cancellationToken);
     Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken);
-    string BuildPublicUrl(string objectKey);
+    string BuildPublicUrl(string objectKey, TimeSpan roundingInterval, string cacheControl);
     bool TryParseObjectKey(string? storedUrlOrKey, out string objectKey);
 }
 
@@ -39,15 +39,11 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
         }
     }
 
-    public string BuildPublicUrl(string objectKey)
+    public string BuildPublicUrl(string objectKey, TimeSpan cacheWindow, string cacheControl)
     {
         var endpoint = _options.Endpoint.TrimEnd('/');
         if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri))
             throw new InvalidOperationException("Object storage endpoint is not a valid URI.");
-
-        // Pre-signed GET URL (SigV4). Bucket is private by default, so callers need a signed URL.
-        // Keep expiry short; callers can request a fresh URL when needed.
-        var expires = TimeSpan.FromMinutes(60);
 
         var accessKey = _options.AccessKeyId;
         var secretKey = _options.SecretAccessKey;
@@ -65,9 +61,15 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
             ? endpointUri.Host
             : $"{endpointUri.Host}:{endpointUri.Port}";
 
+        // Round timestamp to the nearest boundary so the same URL is generated within a window,
+        // enabling browser caching. The URL expires at the end of the rounding interval.
         var now = DateTimeOffset.UtcNow;
-        var amzDate = now.ToString("yyyyMMdd'T'HHmmss'Z'");
-        var dateStamp = now.ToString("yyyyMMdd");
+        var roundedTicks = now.UtcTicks - now.UtcTicks % cacheWindow.Ticks;
+        var roundedNow = new DateTimeOffset(roundedTicks, TimeSpan.Zero);
+        var amzDate = roundedNow.ToString("yyyyMMdd'T'HHmmss'Z'");
+        var dateStamp = roundedNow.ToString("yyyyMMdd");
+        // double the requested expiration to account for clock skew and ensure the URL is valid for at least the requested time.
+        var expires = (int)cacheWindow.TotalSeconds * 2;
 
         var algorithm = "AWS4-HMAC-SHA256";
         var credentialScope = $"{dateStamp}/{region}/{service}/aws4_request";
@@ -78,8 +80,9 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
             ["X-Amz-Algorithm"] = algorithm,
             ["X-Amz-Credential"] = credential,
             ["X-Amz-Date"] = amzDate,
-            ["X-Amz-Expires"] = ((int)expires.TotalSeconds).ToString(),
-            ["X-Amz-SignedHeaders"] = "host"
+            ["X-Amz-Expires"] = expires.ToString(),
+            ["X-Amz-SignedHeaders"] = "host",
+            ["response-cache-control"] = Uri.EscapeDataString(cacheControl)
         };
 
         var canonicalQueryString = string.Join("&",

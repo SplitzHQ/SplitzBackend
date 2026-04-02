@@ -194,6 +194,7 @@ public class GroupController(
         group.Photo = result.ObjectKey;
         group.LastActivityTime = DateTime.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+        await imageStorage.DeleteIfOwnedAsync(existingPhoto, cancellationToken);
         return Ok(result);
     }
 
