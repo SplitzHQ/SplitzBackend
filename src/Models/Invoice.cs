@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace SplitzBackend.Models;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum InvoiceStatus
 {
     Open = 0,

@@ -70,6 +70,7 @@ public class Program
             });
             options.OperationFilter<SwaggerSecurityOperationFilter>();
             options.SchemaFilter<DecimalAsStringSchemaFilter>();
+            options.DocumentFilter<EnumAsStringDocumentFilter>();
         });
 
         // configure microsoft openapi (aspnet 10 recommended, but cannot change decimal type to string & set allow anonymous for auth)
