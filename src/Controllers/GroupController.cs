@@ -92,6 +92,34 @@ public class GroupController(
     }
 
     /// <summary>
+    ///     Get the group invoices
+    /// </summary>
+    /// <param name="groupId"></param>
+    /// <returns></returns>
+    [HttpGet("{groupId}/invoices", Name = "GetGroupInvoices")]
+    [Produces("application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(200)]
+    public async Task<ActionResult<List<InvoiceReducedDto>>> GetGroupInvoices(Guid groupId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+        var group = await db.Groups
+            .Where(g => g.Members.Contains(user) && g.GroupId == groupId)
+            .FirstOrDefaultAsync();
+        if (group is null)
+            return NotFound();
+        var invoices = await db.Invoices
+            .Where(i => i.GroupId == groupId)
+            .OrderByDescending(i => i.CreateTime)
+            .Include(i => i.CreatedBy)
+            .ToListAsync();
+        return mapper.Map<List<InvoiceReducedDto>>(invoices);
+    }
+
+    /// <summary>
     ///     Create a new group
     /// </summary>
     /// <param name="groupInputDto">group info</param>
