@@ -69,7 +69,7 @@ public sealed class SignedPhotoUrlResolver(IObjectStorage objectStorage)
                        objectKey.StartsWith("groups/", StringComparison.OrdinalIgnoreCase);
 
         return isPublic
-            ? objectStorage.BuildPublicUrl(objectKey, PublicRounding, PublicCacheControl)
-            : objectStorage.BuildPublicUrl(objectKey, PrivateRounding, PrivateCacheControl);
+            ? objectStorage.BuildRelativeUrl(objectKey, PublicRounding, PublicCacheControl)
+            : objectStorage.BuildRelativeUrl(objectKey, PrivateRounding, PrivateCacheControl);
     }
 }

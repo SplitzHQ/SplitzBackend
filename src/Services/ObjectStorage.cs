@@ -9,7 +9,7 @@ public interface IObjectStorage
 {
     Task UploadAsync(string objectKey, string contentType, Stream content, CancellationToken cancellationToken);
     Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken);
-    string BuildPublicUrl(string objectKey, TimeSpan roundingInterval, string cacheControl);
+    string BuildRelativeUrl(string objectKey, TimeSpan roundingInterval, string cacheControl);
     bool TryParseObjectKey(string? storedUrlOrKey, out string objectKey);
 }
 
@@ -39,7 +39,12 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
         }
     }
 
-    public string BuildPublicUrl(string objectKey, TimeSpan cacheWindow, string cacheControl)
+    public string BuildRelativeUrl(string objectKey, TimeSpan cacheWindow, string cacheControl)
+    {
+        return BuildSignedUri(objectKey, cacheWindow, cacheControl).PathAndQuery;
+    }
+
+    private Uri BuildSignedUri(string objectKey, TimeSpan cacheWindow, string cacheControl)
     {
         var endpoint = _options.Endpoint.TrimEnd('/');
         if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri))
@@ -119,7 +124,7 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
             Query = $"{canonicalQueryString}&X-Amz-Signature={signature}"
         };
 
-        return finalUri.Uri.ToString();
+        return finalUri.Uri;
     }
 
     public bool TryParseObjectKey(string? storedUrlOrKey, out string objectKey)
