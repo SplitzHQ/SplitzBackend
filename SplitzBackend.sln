@@ -1,9 +1,11 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SplitzBackend", "SplitzBackend.csproj", "{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SplitzBackend.Tests", "SplitzBackend.Tests\SplitzBackend.Tests.csproj", "{861A65B1-518A-412A-B9DC-A59884F9166B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1DF2D5A5-C98A-4829-82F2-30EDE22A2B0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{861A65B1-518A-412A-B9DC-A59884F9166B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{861A65B1-518A-412A-B9DC-A59884F9166B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{861A65B1-518A-412A-B9DC-A59884F9166B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{861A65B1-518A-412A-B9DC-A59884F9166B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

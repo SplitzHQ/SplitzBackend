@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using Resend;
 using Scalar.AspNetCore;
 using SplitzBackend.Models;
 using SplitzBackend.OpenAPIGen.Filter;
@@ -19,6 +20,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        var emailOptions = builder.Configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>() ?? new EmailOptions();
 
         // configure database
         builder.Services.AddDbContext<SplitzDbContext>(options =>
@@ -28,15 +30,7 @@ public class Program
 
         // configure identity
         builder.Services.AddAuthorization();
-        builder.Services.AddIdentityApiEndpoints<SplitzUser>(option =>
-            {
-                option.User.RequireUniqueEmail = true;
-                option.Password.RequiredLength = 12;
-                option.Password.RequireDigit = true;
-                option.Password.RequireLowercase = true;
-                option.Password.RequireUppercase = false;
-                option.Password.RequireNonAlphanumeric = false;
-            })
+        builder.Services.AddIdentityApiEndpoints<SplitzUser>(option => ConfigureIdentityOptions(option, emailOptions))
             .AddEntityFrameworkStores<SplitzDbContext>();
 
         // configure routing and controllers
@@ -131,6 +125,34 @@ public class Program
         });
 
         builder.Services.AddSingleton<IObjectStorage, S3ObjectStorage>();
+
+        // configure email service (Resend)
+        builder.Services.AddOptions<EmailOptions>()
+            .Bind(builder.Configuration.GetSection(EmailOptions.SectionName))
+            .Validate(options =>
+            {
+                if (!builder.Environment.IsProduction())
+                    return true;
+
+                try
+                {
+                    EmailOptions.ValidateForProduction(options);
+                    return true;
+                }
+                catch (OptionsValidationException)
+                {
+                    return false;
+                }
+            }, "Email configuration is incomplete for production.")
+            .ValidateOnStart();
+
+        builder.Services.AddHttpClient<ResendClient>();
+        builder.Services.Configure<ResendClientOptions>(options =>
+        {
+            options.ApiToken = builder.Configuration[$"{EmailOptions.SectionName}:ApiKey"] ?? string.Empty;
+        });
+        builder.Services.AddTransient<IResend, ResendClient>();
+        builder.Services.AddTransient<IEmailSender<SplitzUser>, ResendIdentityEmailSender>();
 
         // configure automapper
         builder.Services.AddAutoMapper((serviceProvider, cfg) =>
@@ -293,5 +315,16 @@ public class Program
         Console.WriteLine($"  Email: bob@example.com, Password: {defaultPassword}");
         Console.WriteLine($"  Email: charlie@example.com, Password: {defaultPassword}");
         Console.WriteLine($"  Email: diana@example.com, Password: {defaultPassword}");
+    }
+
+    public static void ConfigureIdentityOptions(IdentityOptions option, EmailOptions emailOptions)
+    {
+        option.User.RequireUniqueEmail = true;
+        option.SignIn.RequireConfirmedEmail = emailOptions.IsAvailable;
+        option.Password.RequiredLength = 12;
+        option.Password.RequireDigit = true;
+        option.Password.RequireLowercase = true;
+        option.Password.RequireUppercase = false;
+        option.Password.RequireNonAlphanumeric = false;
     }
 }

@@ -9,6 +9,11 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="SplitzBackend.Tests\**\*.cs" />
+    <Content Remove="SplitzBackend.Tests\**\*" />
+    <None Remove="SplitzBackend.Tests\**\*" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.1.1" />
     <PackageReference Include="AutoMapper.Collection" Version="13.0.0" />
     <PackageReference Include="AutoMapper.Collection.EntityFrameworkCore" Version="13.0.0" />
@@ -33,6 +38,7 @@
     <PackageReference Include="NetVips.Native.win-x64" Version="8.18.3" />
     <PackageReference Include="NuGet.Packaging" Version="7.6.0" />
     <PackageReference Include="NuGet.Protocol" Version="7.6.0" />
+    <PackageReference Include="Resend" Version="0.1.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.4" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.2" />
