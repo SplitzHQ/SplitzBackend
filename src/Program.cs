@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using Resend;
 using Scalar.AspNetCore;
 using SplitzBackend.Models;
 using SplitzBackend.OpenAPIGen.Filter;
@@ -28,15 +29,7 @@ public class Program
 
         // configure identity
         builder.Services.AddAuthorization();
-        builder.Services.AddIdentityApiEndpoints<SplitzUser>(option =>
-            {
-                option.User.RequireUniqueEmail = true;
-                option.Password.RequiredLength = 12;
-                option.Password.RequireDigit = true;
-                option.Password.RequireLowercase = true;
-                option.Password.RequireUppercase = false;
-                option.Password.RequireNonAlphanumeric = false;
-            })
+        builder.Services.AddIdentityApiEndpoints<SplitzUser>(ConfigureIdentityOptions)
             .AddEntityFrameworkStores<SplitzDbContext>();
 
         // configure routing and controllers
@@ -129,6 +122,14 @@ public class Program
                 }
             }, "Email configuration is incomplete for production.")
             .ValidateOnStart();
+
+        builder.Services.AddHttpClient<ResendClient>();
+        builder.Services.Configure<ResendClientOptions>(options =>
+        {
+            options.ApiToken = builder.Configuration[$"{EmailOptions.SectionName}:ApiKey"] ?? string.Empty;
+        });
+        builder.Services.AddTransient<IResend, ResendClient>();
+        builder.Services.AddTransient<IEmailSender<SplitzUser>, ResendIdentityEmailSender>();
 
         builder.Services.AddSingleton<IBlobStorage>(sp =>
         {
@@ -312,5 +313,16 @@ public class Program
         Console.WriteLine($"  Email: bob@example.com, Password: {defaultPassword}");
         Console.WriteLine($"  Email: charlie@example.com, Password: {defaultPassword}");
         Console.WriteLine($"  Email: diana@example.com, Password: {defaultPassword}");
+    }
+
+    public static void ConfigureIdentityOptions(IdentityOptions option)
+    {
+        option.User.RequireUniqueEmail = true;
+        option.SignIn.RequireConfirmedEmail = true;
+        option.Password.RequiredLength = 12;
+        option.Password.RequireDigit = true;
+        option.Password.RequireLowercase = true;
+        option.Password.RequireUppercase = false;
+        option.Password.RequireNonAlphanumeric = false;
     }
 }

@@ -38,6 +38,7 @@
     <PackageReference Include="NetVips.Native.win-x64" Version="8.18.3" />
     <PackageReference Include="NuGet.Packaging" Version="7.6.0" />
     <PackageReference Include="NuGet.Protocol" Version="7.6.0" />
+    <PackageReference Include="Resend" Version="0.1.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.4" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.2" />
