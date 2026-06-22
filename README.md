@@ -45,6 +45,23 @@ Image upload and signed image URL flows require the `Storage` section to be conf
 
 For local development, prefer user secrets or environment variables for credentials instead of committing real values.
 
+Transactional account email uses the `Email` section. If `Email:Enabled` is false or no API key is configured, registration still succeeds and confirmation email sending is skipped; password recovery should be treated as unavailable by clients. Configure real values through user secrets or environment variables, not committed settings:
+
+```json
+"Email": {
+  "Provider": "Resend",
+  "Enabled": false,
+  "ApiKey": "",
+  "FromEmail": "",
+  "FromName": "SplitZ",
+  "FrontendBaseUrl": "http://localhost:5173",
+  "ConfirmEmailPath": "/confirm-email",
+  "ResetPasswordPath": "/reset-password"
+}
+```
+
+When `Email:Enabled` is true, production startup validates that the required provider fields are configured.
+
 ## Development
 
 Run commands from the repository root.
