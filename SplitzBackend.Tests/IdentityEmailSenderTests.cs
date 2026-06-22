@@ -70,7 +70,7 @@ public class IdentityEmailSenderTests
     public async Task DisabledSenderDoesNotRequireResendClient()
     {
         var sender = new ResendIdentityEmailSender(
-            resend: null,
+            serviceScopeFactory: null,
             emailOptions: Options.Create(new EmailOptions()),
             logger: NullLogger<ResendIdentityEmailSender>.Instance);
 

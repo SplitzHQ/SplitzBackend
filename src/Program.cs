@@ -104,6 +104,28 @@ public class Program
             .Validate(o => !string.IsNullOrWhiteSpace(o.Region), "Storage:Region is required")
             .ValidateOnStart();
 
+        builder.Services.AddSingleton<IBlobStorage>(sp =>
+        {
+            StorageFactory.Modules.UseAwsStorage();
+
+            var options = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
+            if (!options.Provider.Equals("S3", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Unsupported storage provider '{options.Provider}'.");
+            if (string.IsNullOrWhiteSpace(options.Endpoint))
+                throw new InvalidOperationException("Storage:Endpoint is required for S3.");
+
+            return StorageFactory.Blobs.AwsS3(
+                options.AccessKeyId,
+                options.SecretAccessKey,
+                null,
+                options.Bucket,
+                options.Region,
+                options.Endpoint);
+        });
+
+        builder.Services.AddSingleton<IObjectStorage, S3ObjectStorage>();
+
+        // configure email service (Resend)
         builder.Services.AddOptions<EmailOptions>()
             .Bind(builder.Configuration.GetSection(EmailOptions.SectionName))
             .Validate(options =>
@@ -130,27 +152,6 @@ public class Program
         });
         builder.Services.AddTransient<IResend, ResendClient>();
         builder.Services.AddTransient<IEmailSender<SplitzUser>, ResendIdentityEmailSender>();
-
-        builder.Services.AddSingleton<IBlobStorage>(sp =>
-        {
-            StorageFactory.Modules.UseAwsStorage();
-
-            var options = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
-            if (!options.Provider.Equals("S3", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"Unsupported storage provider '{options.Provider}'.");
-            if (string.IsNullOrWhiteSpace(options.Endpoint))
-                throw new InvalidOperationException("Storage:Endpoint is required for S3.");
-
-            return StorageFactory.Blobs.AwsS3(
-                options.AccessKeyId,
-                options.SecretAccessKey,
-                null,
-                options.Bucket,
-                options.Region,
-                options.Endpoint);
-        });
-
-        builder.Services.AddSingleton<IObjectStorage, S3ObjectStorage>();
 
         // configure automapper
         builder.Services.AddAutoMapper((serviceProvider, cfg) =>

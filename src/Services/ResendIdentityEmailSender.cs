@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Resend;
 using SplitzBackend.Models;
@@ -7,14 +8,14 @@ using SplitzBackend.Models;
 namespace SplitzBackend.Services;
 
 public sealed class ResendIdentityEmailSender(
-    IResend? resend,
+    IServiceScopeFactory? serviceScopeFactory,
     IOptions<EmailOptions> emailOptions,
     ILogger<ResendIdentityEmailSender> logger) : IEmailSender<SplitzUser>
 {
     public async Task SendConfirmationLinkAsync(SplitzUser user, string email, string confirmationLink)
     {
         var options = emailOptions.Value;
-        if (!options.IsAvailable || resend is null)
+        if (!options.IsAvailable || serviceScopeFactory is null)
         {
             logger.LogInformation("Email confirmation delivery skipped because transactional email is unavailable.");
             return;
@@ -30,7 +31,7 @@ public sealed class ResendIdentityEmailSender(
     public async Task SendPasswordResetLinkAsync(SplitzUser user, string email, string resetLink)
     {
         var options = emailOptions.Value;
-        if (!options.IsAvailable || resend is null)
+        if (!options.IsAvailable || serviceScopeFactory is null)
         {
             logger.LogInformation("Password reset email delivery skipped because transactional email is unavailable.");
             return;
@@ -46,7 +47,7 @@ public sealed class ResendIdentityEmailSender(
     public async Task SendPasswordResetCodeAsync(SplitzUser user, string email, string resetCode)
     {
         var options = emailOptions.Value;
-        if (!options.IsAvailable || resend is null)
+        if (!options.IsAvailable || serviceScopeFactory is null)
         {
             logger.LogInformation("Password reset email delivery skipped because transactional email is unavailable.");
             return;
@@ -109,7 +110,9 @@ public sealed class ResendIdentityEmailSender(
         };
         message.To.Add(recipient);
 
-        await resend!.EmailSendAsync(message);
+        using var scope = serviceScopeFactory!.CreateScope();
+        var resend = scope.ServiceProvider.GetRequiredService<IResend>();
+        await resend.EmailSendAsync(message);
         logger.LogInformation("Transactional email sent for {EmailPurpose}.", subject);
     }
 

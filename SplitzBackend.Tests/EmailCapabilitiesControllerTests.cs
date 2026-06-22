@@ -11,7 +11,7 @@ public class EmailCapabilitiesControllerTests
     [Fact]
     public void EmailCapabilitiesIsAnonymous()
     {
-        var method = typeof(AccountController).GetMethod(nameof(AccountController.GetEmailCapabilities));
+        var method = typeof(AccountEmailController).GetMethod(nameof(AccountEmailController.GetEmailCapabilities));
 
         Assert.NotNull(method);
         Assert.Contains(method.GetCustomAttributes(inherit: true), attribute => attribute is Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute);
@@ -20,12 +20,7 @@ public class EmailCapabilitiesControllerTests
     [Fact]
     public void EmailCapabilitiesReportsUnavailableWhenEmailIsDisabled()
     {
-        var controller = new AccountController(
-            db: null!,
-            userManager: null!,
-            mapper: null!,
-            imageStorage: null!,
-            emailOptions: Options.Create(new EmailOptions()));
+        var controller = new AccountEmailController(Options.Create(new EmailOptions()));
 
         var result = controller.GetEmailCapabilities();
 
@@ -38,12 +33,8 @@ public class EmailCapabilitiesControllerTests
     [Fact]
     public void EmailCapabilitiesReportsAvailableWhenEmailIsConfigured()
     {
-        var controller = new AccountController(
-            db: null!,
-            userManager: null!,
-            mapper: null!,
-            imageStorage: null!,
-            emailOptions: Options.Create(new EmailOptions
+        var controller = new AccountEmailController(
+            Options.Create(new EmailOptions
             {
                 Enabled = true,
                 ApiKey = "re_test_key",
