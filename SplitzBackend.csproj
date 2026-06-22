@@ -9,6 +9,11 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="SplitzBackend.Tests\**\*.cs" />
+    <Content Remove="SplitzBackend.Tests\**\*" />
+    <None Remove="SplitzBackend.Tests\**\*" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="16.1.1" />
     <PackageReference Include="AutoMapper.Collection" Version="13.0.0" />
     <PackageReference Include="AutoMapper.Collection.EntityFrameworkCore" Version="13.0.0" />

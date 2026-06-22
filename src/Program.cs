@@ -111,6 +111,25 @@ public class Program
             .Validate(o => !string.IsNullOrWhiteSpace(o.Region), "Storage:Region is required")
             .ValidateOnStart();
 
+        builder.Services.AddOptions<EmailOptions>()
+            .Bind(builder.Configuration.GetSection(EmailOptions.SectionName))
+            .Validate(options =>
+            {
+                if (!builder.Environment.IsProduction())
+                    return true;
+
+                try
+                {
+                    EmailOptions.ValidateForProduction(options);
+                    return true;
+                }
+                catch (OptionsValidationException)
+                {
+                    return false;
+                }
+            }, "Email configuration is incomplete for production.")
+            .ValidateOnStart();
+
         builder.Services.AddSingleton<IBlobStorage>(sp =>
         {
             StorageFactory.Modules.UseAwsStorage();

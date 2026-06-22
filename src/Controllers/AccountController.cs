@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SplitzBackend.Models;
 using SplitzBackend.Services;
 
@@ -15,8 +16,22 @@ public class AccountController(
     SplitzDbContext db,
     UserManager<SplitzUser> userManager,
     IMapper mapper,
-    IImageStorageService imageStorage) : ControllerBase
+    IImageStorageService imageStorage,
+    IOptions<EmailOptions> emailOptions) : ControllerBase
 {
+    /// <summary>
+    ///     Reports whether transactional email-backed account workflows are available.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("email-capabilities", Name = "GetEmailCapabilities")]
+    [Produces("application/json")]
+    [ProducesResponseType(200)]
+    public ActionResult<EmailCapabilitiesDto> GetEmailCapabilities()
+    {
+        var isAvailable = emailOptions.Value.IsAvailable;
+        return Ok(new EmailCapabilitiesDto(isAvailable, isAvailable));
+    }
+
     /// <summary>
     ///     Get the current user's information
     /// </summary>
@@ -185,3 +200,5 @@ public class SplitzUserUpdateViewModel
 {
     public string? UserName { get; set; }
 }
+
+public sealed record EmailCapabilitiesDto(bool EmailEnabled, bool PasswordResetEnabled);
