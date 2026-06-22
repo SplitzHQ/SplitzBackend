@@ -31,6 +31,25 @@ public class IdentityEmailSenderTests
     }
 
     [Fact]
+    public void BuildConfirmationUrlMapsHtmlEncodedIdentityLinkToFrontendRoute()
+    {
+        var options = new EmailOptions
+        {
+            FrontendBaseUrl = "https://app.example.com",
+            ConfirmEmailPath = "/confirm-email"
+        };
+        var backendLink = "https://api.example.com/account/confirmEmail?userId=user-1&amp;code=abc%2B123&amp;changedEmail=new%40example.com";
+
+        var frontendLink = ResendIdentityEmailSender.BuildConfirmationUrl(options, backendLink);
+        var uri = new Uri(frontendLink);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        Assert.Equal("user-1", query["userId"]);
+        Assert.Equal("abc+123", query["code"]);
+        Assert.Equal("new@example.com", query["changedEmail"]);
+    }
+
+    [Fact]
     public void BuildPasswordResetUrlMapsIdentityLinkParametersToFrontendRoute()
     {
         var options = new EmailOptions

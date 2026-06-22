@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,7 +63,7 @@ public sealed class ResendIdentityEmailSender(
 
     public static string BuildConfirmationUrl(EmailOptions options, string confirmationLink)
     {
-        var query = QueryHelpers.ParseQuery(new Uri(confirmationLink).Query);
+        var query = QueryHelpers.ParseQuery(new Uri(WebUtility.HtmlDecode(confirmationLink)).Query);
         var parameters = new Dictionary<string, string?>
         {
             ["userId"] = query.TryGetValue("userId", out var userId) ? userId.ToString() : null,
@@ -78,7 +79,7 @@ public sealed class ResendIdentityEmailSender(
         var code = resetCode;
         if (!string.IsNullOrWhiteSpace(resetLink))
         {
-            var query = QueryHelpers.ParseQuery(new Uri(resetLink).Query);
+            var query = QueryHelpers.ParseQuery(new Uri(WebUtility.HtmlDecode(resetLink)).Query);
             if (query.TryGetValue("resetCode", out var resetCodeFromLink))
                 code = resetCodeFromLink.ToString();
             if (query.TryGetValue("code", out var codeFromLink))
