@@ -34,7 +34,7 @@ public class Group
     ///     The date of the last transaction of the group.
     ///     This is only for searching purposes and may not be accurate if transactions are deleted or modified.
     /// </summary>
-    public required DateTime LastActivityTime { get; set; } = DateTime.Now;
+    public required DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
     public void UpdateMembersIdHash()
     {
@@ -73,7 +73,7 @@ public class GroupDto
     ///     The date of the last transaction between the user and their friend.
     ///     This is only for searching purposes and may not be accurate if transactions are deleted or modified.
     /// </summary>
-    public required DateTime LastActivityTime { get; set; } = DateTime.Now;
+    public required DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 }
 
 public class GroupReducedDto

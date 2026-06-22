@@ -255,7 +255,7 @@ public class Program
                 Members = new List<SplitzUser> { alice, bob, charlie },
                 MembersIdHash = "",
                 TransactionCount = 0,
-                LastActivityTime = DateTime.Now.AddDays(-1)
+                LastActivityTime = DateTime.UtcNow.AddDays(-1)
             },
             new()
             {
@@ -265,7 +265,7 @@ public class Program
                 Members = new List<SplitzUser> { alice, bob },
                 MembersIdHash = "",
                 TransactionCount = 0,
-                LastActivityTime = DateTime.Now.AddDays(-3)
+                LastActivityTime = DateTime.UtcNow.AddDays(-3)
             },
             new()
             {
@@ -275,7 +275,7 @@ public class Program
                 Members = new List<SplitzUser> { alice, bob, charlie, diana },
                 MembersIdHash = "",
                 TransactionCount = 0,
-                LastActivityTime = DateTime.Now.AddDays(-7)
+                LastActivityTime = DateTime.UtcNow.AddDays(-7)
             }
         };
 

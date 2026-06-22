@@ -81,7 +81,7 @@ public class TransactionController(
         ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency);
         await context.SaveChangesAsync();
 
-        group.LastActivityTime = DateTime.Now;
+        group.LastActivityTime = DateTime.UtcNow;
         group.TransactionCount++;
         await context.SaveChangesAsync();
 

@@ -149,7 +149,7 @@ public class GroupController(
 
         group.Transactions = [];
         group.Balances = [];
-        group.LastActivityTime = DateTime.Now;
+        group.LastActivityTime = DateTime.UtcNow;
         db.Groups.Add(group);
         await db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
@@ -285,7 +285,7 @@ public class GroupController(
         group.Members = [.. group.Members, .. members];
         group.Members = group.Members.Distinct().ToList();
         group.UpdateMembersIdHash();
-        group.LastActivityTime = DateTime.Now;
+        group.LastActivityTime = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
     }
@@ -357,7 +357,7 @@ public class GroupController(
             return NotFound();
         groupJoinLink.Group.Members.Add(user);
         groupJoinLink.Group.UpdateMembersIdHash();
-        groupJoinLink.Group.LastActivityTime = DateTime.Now;
+        groupJoinLink.Group.LastActivityTime = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return mapper.Map<GroupDto>(groupJoinLink.Group);
     }
