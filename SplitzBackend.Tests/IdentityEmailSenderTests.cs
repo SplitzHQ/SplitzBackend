@@ -80,11 +80,29 @@ public class IdentityEmailSenderTests
     }
 
     [Fact]
-    public void IdentityOptionsRequireConfirmedEmail()
+    public void IdentityOptionsSkipConfirmedEmailWhenEmailIsDisabled()
     {
         var options = new IdentityOptions();
 
-        Program.ConfigureIdentityOptions(options);
+        Program.ConfigureIdentityOptions(options, new EmailOptions());
+
+        Assert.False(options.SignIn.RequireConfirmedEmail);
+    }
+
+    [Fact]
+    public void IdentityOptionsRequireConfirmedEmailWhenEmailIsAvailable()
+    {
+        var options = new IdentityOptions();
+
+        Program.ConfigureIdentityOptions(
+            options,
+            new EmailOptions
+            {
+                Enabled = true,
+                ApiKey = "re_test_key",
+                FromEmail = "noreply@example.com",
+                FrontendBaseUrl = "https://app.example.com"
+            });
 
         Assert.True(options.SignIn.RequireConfirmedEmail);
     }

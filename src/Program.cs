@@ -20,6 +20,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        var emailOptions = builder.Configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>() ?? new EmailOptions();
 
         // configure database
         builder.Services.AddDbContext<SplitzDbContext>(options =>
@@ -29,7 +30,7 @@ public class Program
 
         // configure identity
         builder.Services.AddAuthorization();
-        builder.Services.AddIdentityApiEndpoints<SplitzUser>(ConfigureIdentityOptions)
+        builder.Services.AddIdentityApiEndpoints<SplitzUser>(option => ConfigureIdentityOptions(option, emailOptions))
             .AddEntityFrameworkStores<SplitzDbContext>();
 
         // configure routing and controllers
@@ -316,10 +317,10 @@ public class Program
         Console.WriteLine($"  Email: diana@example.com, Password: {defaultPassword}");
     }
 
-    public static void ConfigureIdentityOptions(IdentityOptions option)
+    public static void ConfigureIdentityOptions(IdentityOptions option, EmailOptions emailOptions)
     {
         option.User.RequireUniqueEmail = true;
-        option.SignIn.RequireConfirmedEmail = true;
+        option.SignIn.RequireConfirmedEmail = emailOptions.IsAvailable;
         option.Password.RequiredLength = 12;
         option.Password.RequireDigit = true;
         option.Password.RequireLowercase = true;
