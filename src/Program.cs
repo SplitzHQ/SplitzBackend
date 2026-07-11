@@ -153,6 +153,7 @@ public class Program
         });
         builder.Services.AddTransient<IResend, ResendClient>();
         builder.Services.AddTransient<IEmailSender<SplitzUser>, ResendIdentityEmailSender>();
+        builder.Services.AddScoped<AccountRecoveryService>();
 
         // configure automapper
         builder.Services.AddAutoMapper((serviceProvider, cfg) =>
@@ -199,7 +200,9 @@ public class Program
 
         app.UseAuthorization();
 
-        app.MapGroup("/account").MapIdentityApi<SplitzUser>();
+        var accountGroup = app.MapGroup("/account");
+        accountGroup.MapIdentityApi<SplitzUser>();
+        accountGroup.MapAccountRecoveryEndpoints();
         app.MapControllers();
 
         app.Run();
