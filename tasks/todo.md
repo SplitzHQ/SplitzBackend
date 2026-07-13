@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-8 complete
+Status: Implementation in progress; Tasks 1-9 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -126,15 +126,15 @@ Depends on: Task 6
 
 Depends on: Tasks 2, 3, 4, 5, 7, and 8
 
-- [ ] Add and register the rate-limit Swashbuckle operation filter.
-- [ ] Document `429`, `application/problem+json`, `ProblemDetails`, and `Retry-After` on every protected endpoint.
-- [ ] Assert out-of-scope endpoints do not gain rate-limit documentation.
-- [ ] Add Swagger document tests through `ISwaggerProvider`.
-- [ ] Start the backend in Development with safe local configuration.
-- [ ] Regenerate `SplitzFrontend/src/backend/openapi` through the documented command.
-- [ ] Review generated changes and confirm success signatures remain unchanged.
-- [ ] Run frontend type-check and diff checks.
-- [ ] Focused verification passes as listed in Task 9 of `tasks/plan.md`.
+- [x] Add and register the rate-limit Swashbuckle operation filter.
+- [x] Document `429`, `application/problem+json`, `ProblemDetails`, and `Retry-After` on every protected endpoint.
+- [x] Assert out-of-scope endpoints do not gain rate-limit documentation.
+- [x] Add Swagger document tests through `ISwaggerProvider`.
+- [x] Start the backend in Development with safe local configuration.
+- [x] Regenerate `SplitzFrontend/src/backend/openapi` through the documented command.
+- [x] Review generated changes and confirm success signatures remain unchanged.
+- [x] Run frontend type-check and diff checks.
+- [x] Focused verification passes as listed in Task 9 of `tasks/plan.md`.
 
 ## Task 10: Hardening And Release Validation
 

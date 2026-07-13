@@ -1,9 +1,9 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-8 complete
+Status: Implementation in progress; Tasks 1-9 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
-Last updated: 2026-07-12
+Last updated: 2026-07-13
 
 ## Planning Assumptions
 
@@ -394,16 +394,16 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] Every protected account and upload endpoint documents the `429` Problem Details response and `Retry-After` header.
-- [ ] Out-of-scope endpoints do not gain rate-limit response documentation.
-- [ ] Frontend generated files are reproducible from backend `/openapi/v1.json`.
-- [ ] Frontend type-check passes without application changes to generated code.
+- [x] Every protected account and upload endpoint documents the `429` Problem Details response and `Retry-After` header.
+- [x] Out-of-scope endpoints do not gain rate-limit response documentation.
+- [x] Frontend generated files are reproducible from backend `/openapi/v1.json`.
+- [x] Frontend type-check passes without application changes to generated code.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitOpenApiTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
-- [ ] `bun run type-check`
-- [ ] `git diff --check` in both repositories
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitOpenApiTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `bun run type-check`
+- [x] `git diff --check` in both repositories
 
 ## Task 10: Harden And Validate The Release
 

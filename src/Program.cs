@@ -67,6 +67,7 @@ public class Program
                 Scheme = "bearer"
             });
             options.OperationFilter<SwaggerSecurityOperationFilter>();
+            options.OperationFilter<RateLimitResponseOperationFilter>();
             options.SchemaFilter<DecimalAsStringSchemaFilter>();
             options.DocumentFilter<EnumAsStringDocumentFilter>();
         });
