@@ -23,9 +23,11 @@ public class RateLimitingEndpointMetadataTests
                 endpoint => NormalizeRoute(endpoint.RoutePattern.RawText),
                 StringComparer.OrdinalIgnoreCase);
 
-        Assert.Equal(10, protectedEndpoints.Count);
+        Assert.Equal(12, protectedEndpoints.Count);
         AssertUploadEndpoint(protectedEndpoints["/account/avatar"]);
+        AssertUploadEndpoint(protectedEndpoints["/group/{groupid}/avatar"]);
         AssertUploadEndpoint(protectedEndpoints["/transaction/{id}/receipt"]);
+        AssertUploadEndpoint(protectedEndpoints["/transactiondraft/{id}/receipt"]);
         AssertEndpoint(
                 protectedEndpoints["/account/confirmemail"],
                 "/account/confirmEmail",
@@ -67,6 +69,21 @@ public class RateLimitingEndpointMetadataTests
                 "/account/resetPassword",
                 "password-reset-ip",
                 "password-reset");
+
+        var uploadEndpoints = endpoints
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.Metadata.GetMetadata<UploadRateLimitEndpointMetadataAttribute>() is not null)
+            .Select(endpoint => NormalizeRoute(endpoint.RoutePattern.RawText))
+            .OrderBy(route => route, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(
+            [
+                "/account/avatar",
+                "/group/{groupid}/avatar",
+                "/transaction/{id}/receipt",
+                "/transactiondraft/{id}/receipt"
+            ],
+            uploadEndpoints);
     }
 
     private static void AssertEndpoint(

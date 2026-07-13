@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-7 complete
+Status: Implementation in progress; Tasks 1-8 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -113,14 +113,14 @@ Depends on: Task 6
 
 Depends on: Task 6
 
-- [ ] Apply upload policies to `POST /group/{groupId}/avatar`.
-- [ ] Apply upload policies to `POST /transactiondraft/{id}/receipt`.
-- [ ] Seed minimum ownership data needed by hosted upload tests.
-- [ ] Test global concurrency across all four upload routes.
-- [ ] Test one user's shared hourly pool and cross-user isolation across all four routes.
-- [ ] Assert exactly the four approved upload actions carry upload metadata.
-- [ ] Confirm existing authorization and ownership responses remain unchanged.
-- [ ] Focused verification passes as listed in Task 8 of `tasks/plan.md`.
+- [x] Apply upload policies to `POST /group/{groupId}/avatar`.
+- [x] Apply upload policies to `POST /transactiondraft/{id}/receipt`.
+- [x] Seed minimum ownership data needed by hosted upload tests.
+- [x] Test global concurrency across all four upload routes.
+- [x] Test one user's shared hourly pool and cross-user isolation across all four routes.
+- [x] Assert exactly the four approved upload actions carry upload metadata.
+- [x] Confirm existing authorization and ownership responses remain unchanged.
+- [x] Focused verification passes as listed in Task 8 of `tasks/plan.md`.
 
 ## Task 9: Publish The OpenAPI Contract
 

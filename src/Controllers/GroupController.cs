@@ -2,9 +2,11 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
 using SplitzBackend.Services;
+using SplitzBackend.Services.RateLimiting;
 
 namespace SplitzBackend.Controllers;
 
@@ -191,6 +193,8 @@ public class GroupController(
     [ProducesResponseType(400)]
     [ProducesResponseType(200)]
     [RequestSizeLimit(10 * 1024 * 1024)]
+    [UploadRateLimitEndpointMetadata]
+    [EnableRateLimiting(RateLimitPolicyNames.UploadPerUser)]
     public async Task<ActionResult<UploadImageResult>> UploadGroupAvatar(
         Guid groupId,
         IFormFile file,

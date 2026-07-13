@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-7 complete
+Status: Implementation in progress; Tasks 1-8 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-12
@@ -368,14 +368,14 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] Exactly the four specified upload actions are protected.
-- [ ] Global concurrency is process-wide across all four routes, not per route or per user.
-- [ ] Hourly upload quota is shared across all four routes for one user and isolated between users.
-- [ ] Existing authorization and ownership failures remain unchanged when a lease is available.
+- [x] Exactly the four specified upload actions are protected.
+- [x] Global concurrency is process-wide across all four routes, not per route or per user.
+- [x] Hourly upload quota is shared across all four routes for one user and isolated between users.
+- [x] Existing authorization and ownership failures remain unchanged when a lease is available.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingUploadPoolTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingUploadPoolTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
 
 ## Task 9: Publish The Rate-Limit API Contract
 
