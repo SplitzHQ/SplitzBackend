@@ -23,8 +23,9 @@ public class RateLimitingEndpointMetadataTests
                 endpoint => NormalizeRoute(endpoint.RoutePattern.RawText),
                 StringComparer.OrdinalIgnoreCase);
 
-        Assert.Equal(9, protectedEndpoints.Count);
+        Assert.Equal(10, protectedEndpoints.Count);
         AssertUploadEndpoint(protectedEndpoints["/account/avatar"]);
+        AssertUploadEndpoint(protectedEndpoints["/transaction/{id}/receipt"]);
         AssertEndpoint(
                 protectedEndpoints["/account/confirmemail"],
                 "/account/confirmEmail",

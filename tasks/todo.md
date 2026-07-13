@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-6 complete
+Status: Implementation in progress; Tasks 1-7 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -100,14 +100,14 @@ Depends on: Task 1
 
 Depends on: Task 6
 
-- [ ] Apply shared upload policies to `POST /transaction/{id}/receipt`.
-- [ ] Test shared avatar/receipt concurrency and hourly pools.
-- [ ] Split transaction save from pending receipt upload in `AddExpenseDetailsSheet.vue`.
-- [ ] Preserve transaction ID, selected file, and preview after a receipt `429`.
-- [ ] Make manual retry call receipt upload only, without a second transaction save.
-- [ ] Disable save/upload and receipt-picker commands during cooldown.
-- [ ] Add receipt backend integration and component tests.
-- [ ] Focused verification passes as listed in Task 7 of `tasks/plan.md`.
+- [x] Apply shared upload policies to `POST /transaction/{id}/receipt`.
+- [x] Test shared avatar/receipt concurrency and hourly pools.
+- [x] Split transaction save from pending receipt upload in `AddExpenseDetailsSheet.vue`.
+- [x] Preserve transaction ID, selected file, and preview after a receipt `429`.
+- [x] Make manual retry call receipt upload only, without a second transaction save.
+- [x] Disable save/upload and receipt-picker commands during cooldown.
+- [x] Add receipt backend integration and component tests.
+- [x] Focused verification passes as listed in Task 7 of `tasks/plan.md`.
 
 ## Task 8: Complete Shared Upload Pools
 

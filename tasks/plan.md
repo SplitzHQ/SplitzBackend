@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-6 complete
+Status: Implementation in progress; Tasks 1-7 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-12
@@ -338,16 +338,16 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] Receipt upload shares avatar upload limits.
-- [ ] A rate-limited receipt leaves the transaction and selected receipt intact.
-- [ ] Manual retry calls transaction save exactly once and receipt upload again.
-- [ ] Successful retry closes the sheet through the existing success path.
-- [ ] Non-`429` save and upload errors retain current generic reporting behavior.
+- [x] Receipt upload shares avatar upload limits.
+- [x] A rate-limited receipt leaves the transaction and selected receipt intact.
+- [x] Manual retry calls transaction save exactly once and receipt upload again.
+- [x] Successful retry closes the sheet through the existing success path.
+- [x] Non-`429` save and upload errors retain current generic reporting behavior.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingTransactionReceiptTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
-- [ ] `bun run test:unit --run src/pages/NewExpensePage/ReviewAndCompletePage/__tests__/AddExpenseDetailsSheet.spec.ts`
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingTransactionReceiptTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `bun run test:unit --run src/pages/NewExpensePage/ReviewAndCompletePage/__tests__/AddExpenseDetailsSheet.spec.ts`
 
 ## Task 8: Complete The Shared Upload Pools
 
