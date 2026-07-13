@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-5 complete
+Status: Implementation in progress; Tasks 1-6 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-12
@@ -305,16 +305,16 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] Five authenticated avatar uploads may enter processing; a sixth receives immediate `429` and `Retry-After: 5`.
-- [ ] The 201st rolling-hour upload for one user is rejected while another authenticated user retains an independent quota.
-- [ ] Non-upload endpoints do not consume the global upload limiter.
-- [ ] Unauthenticated avatar requests preserve the existing auth response.
-- [ ] Profile UI shows a countdown and cannot reopen the file picker during cooldown.
+- [x] Five authenticated avatar uploads may enter processing; a sixth receives immediate `429` and `Retry-After: 5`.
+- [x] The 201st rolling-hour upload for one user is rejected while another authenticated user retains an independent quota.
+- [x] Non-upload endpoints do not consume the global upload limiter.
+- [x] Unauthenticated avatar requests preserve the existing auth response.
+- [x] Profile UI shows a countdown and cannot reopen the file picker during cooldown.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingAvatarUploadTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
-- [ ] `bun run test:unit --run src/pages/ProfilePage/__tests__/ProfilePage.spec.ts`
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingAvatarUploadTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `bun run test:unit --run src/pages/ProfilePage/__tests__/ProfilePage.spec.ts`
 
 ## Task 7: Deliver The Transaction-Receipt Retry Path
 

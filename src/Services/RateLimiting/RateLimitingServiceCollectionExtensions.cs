@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
@@ -58,21 +59,47 @@ public static class RateLimitingServiceCollectionExtensions
             {
                 var requestServices = rejectionContext.HttpContext.RequestServices;
                 var rateLimitOptions = requestServices.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+                var endpoint = rejectionContext.HttpContext.GetEndpoint();
+                var isUpload = endpoint?.Metadata.GetMetadata<UploadRateLimitEndpointMetadataAttribute>() is not null;
                 var retryAfter = rejectionContext.Lease.TryGetMetadata(
                     MetadataName.RetryAfter,
                     out var calculatedRetryAfter)
                     ? calculatedRetryAfter
-                    : TimeSpan.FromSeconds(rateLimitOptions.DefaultRetryAfterSeconds);
-                var metadata = rejectionContext.HttpContext.GetEndpoint()?
-                    .Metadata.GetMetadata<RateLimitEndpointMetadata>();
+                    : TimeSpan.FromSeconds(isUpload
+                        ? rateLimitOptions.Upload.ConcurrencyRetryAfterSeconds
+                        : rateLimitOptions.DefaultRetryAfterSeconds);
+                var metadata = endpoint?.Metadata.GetMetadata<RateLimitEndpointMetadata>();
 
                 await requestServices.GetRequiredService<RateLimitRejectionWriter>().WriteAsync(
                     rejectionContext.HttpContext,
                     retryAfter,
-                    metadata?.Category ?? "unknown",
-                    metadata?.PartitionType ?? "ip",
+                    metadata?.Category ?? (isUpload ? "upload" : "unknown"),
+                    metadata?.PartitionType ?? (isUpload ? "global" : "ip"),
                     cancellationToken);
             };
+
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                var uploadMetadata = context.GetEndpoint()?
+                    .Metadata.GetMetadata<UploadRateLimitEndpointMetadataAttribute>();
+                var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (uploadMetadata is null || string.IsNullOrEmpty(userId))
+                    return RateLimitPartition.GetNoLimiter("not-authenticated-upload");
+
+                var rateLimitOptions = context.RequestServices
+                    .GetRequiredService<IOptions<RateLimitOptions>>()
+                    .Value;
+                if (!rateLimitOptions.Enabled)
+                    return RateLimitPartition.GetNoLimiter("disabled");
+
+                return RateLimitPartition.GetConcurrencyLimiter("authenticated-upload", _ =>
+                    new ConcurrencyLimiterOptions
+                    {
+                        PermitLimit = rateLimitOptions.Upload.GlobalConcurrencyPermitLimit,
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                    });
+            });
 
             options.AddPolicy(RateLimitPolicyNames.LoginIp, context =>
             {
@@ -178,6 +205,10 @@ public static class RateLimitingServiceCollectionExtensions
                 return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ =>
                     CreateSlidingWindowOptions(rateLimitOptions.PasswordReset.Ip));
             });
+
+            options.AddPolicy(
+                RateLimitPolicyNames.UploadPerUser,
+                new UploadPerUserRateLimiterPolicy());
         });
 
         return services;
@@ -195,5 +226,47 @@ public static class RateLimitingServiceCollectionExtensions
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             AutoReplenishment = true
         };
+    }
+}
+
+internal sealed class UploadPerUserRateLimiterPolicy : IRateLimiterPolicy<string>
+{
+    public Func<OnRejectedContext, CancellationToken, ValueTask> OnRejected => WriteRejectionAsync;
+
+    public RateLimitPartition<string> GetPartition(HttpContext context)
+    {
+        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return RateLimitPartition.GetNoLimiter("unauthenticated");
+
+        var rateLimitOptions = context.RequestServices
+            .GetRequiredService<IOptions<RateLimitOptions>>()
+            .Value;
+        if (!rateLimitOptions.Enabled)
+            return RateLimitPartition.GetNoLimiter("disabled");
+
+        return RateLimitPartition.GetSlidingWindowLimiter(userId, _ =>
+            RateLimitingServiceCollectionExtensions.CreateSlidingWindowOptions(
+                rateLimitOptions.Upload.HourlyPerUser));
+    }
+
+    private static async ValueTask WriteRejectionAsync(
+        OnRejectedContext rejectionContext,
+        CancellationToken cancellationToken)
+    {
+        var requestServices = rejectionContext.HttpContext.RequestServices;
+        var rateLimitOptions = requestServices.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+        var retryAfter = rejectionContext.Lease.TryGetMetadata(
+            MetadataName.RetryAfter,
+            out var calculatedRetryAfter)
+            ? calculatedRetryAfter
+            : TimeSpan.FromSeconds(rateLimitOptions.DefaultRetryAfterSeconds);
+
+        await requestServices.GetRequiredService<RateLimitRejectionWriter>().WriteAsync(
+            rejectionContext.HttpContext,
+            retryAfter,
+            "upload",
+            "user",
+            cancellationToken);
     }
 }

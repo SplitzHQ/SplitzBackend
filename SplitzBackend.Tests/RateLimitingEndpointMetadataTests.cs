@@ -19,52 +19,53 @@ public class RateLimitingEndpointMetadataTests
         var protectedEndpoints = endpoints
             .OfType<RouteEndpoint>()
             .Where(endpoint => endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>() is not null)
-            .OrderBy(endpoint => endpoint.RoutePattern.RawText)
-            .ToList();
+            .ToDictionary(
+                endpoint => NormalizeRoute(endpoint.RoutePattern.RawText),
+                StringComparer.OrdinalIgnoreCase);
 
-        Assert.Collection(
-            protectedEndpoints,
-            endpoint => AssertEndpoint(
-                endpoint,
+        Assert.Equal(9, protectedEndpoints.Count);
+        AssertUploadEndpoint(protectedEndpoints["/account/avatar"]);
+        AssertEndpoint(
+                protectedEndpoints["/account/confirmemail"],
                 "/account/confirmEmail",
                 "email-confirmation-ip",
                 "email-confirmation",
-                HttpMethods.Get),
-            endpoint => AssertEndpoint(
-                endpoint,
+                HttpMethods.Get);
+        AssertEndpoint(
+                protectedEndpoints["/account/forgotpassword"],
                 "/account/forgotPassword",
                 "email-delivery-ip",
-                "email-delivery"),
-            endpoint => AssertEndpoint(
-                endpoint,
+                "email-delivery");
+        AssertEndpoint(
+                protectedEndpoints["/account/login"],
                 "/account/login",
                 RateLimitPolicyNames.LoginIp,
-                "login"),
-            endpoint => AssertEndpoint(
-                endpoint,
+                "login");
+        AssertEndpoint(
+                protectedEndpoints["/account/recovery/request"],
                 "/account/recovery/request",
                 "email-delivery-ip",
-                "email-delivery"),
-            endpoint => AssertEndpoint(
-                endpoint,
+                "email-delivery");
+        AssertEndpoint(
+                protectedEndpoints["/account/recovery/reset"],
                 "/account/recovery/reset",
                 "password-reset-ip",
-                "password-reset"),
-            endpoint => AssertEndpoint(
-                endpoint,
+                "password-reset");
+        AssertEndpoint(
+                protectedEndpoints["/account/register"],
                 "/account/register",
                 "registration-ip",
-                "registration"),
-            endpoint => AssertEndpoint(
-                endpoint,
+                "registration");
+        AssertEndpoint(
+                protectedEndpoints["/account/resendconfirmationemail"],
                 "/account/resendConfirmationEmail",
                 "email-delivery-ip",
-                "email-delivery"),
-            endpoint => AssertEndpoint(
-                endpoint,
+                "email-delivery");
+        AssertEndpoint(
+                protectedEndpoints["/account/resetpassword"],
                 "/account/resetPassword",
                 "password-reset-ip",
-                "password-reset"));
+                "password-reset");
     }
 
     private static void AssertEndpoint(
@@ -87,5 +88,22 @@ public class RateLimitingEndpointMetadataTests
         Assert.Equal(
             new AccountRateLimitEndpointMetadata(category),
             endpoint.Metadata.GetRequiredMetadata<AccountRateLimitEndpointMetadata>());
+    }
+
+    private static void AssertUploadEndpoint(RouteEndpoint endpoint)
+    {
+        Assert.Contains(
+            HttpMethods.Post,
+            endpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods);
+        Assert.Equal("upload-per-user", endpoint.Metadata.GetRequiredMetadata<EnableRateLimitingAttribute>().PolicyName);
+        Assert.Contains(
+            endpoint.Metadata,
+            metadata => metadata.GetType().Name == "UploadRateLimitEndpointMetadataAttribute");
+        Assert.DoesNotContain(endpoint.Metadata, metadata => metadata is AccountRateLimitEndpointMetadata);
+    }
+
+    private static string NormalizeRoute(string? route)
+    {
+        return $"/{route?.TrimStart('/').ToLowerInvariant()}";
     }
 }

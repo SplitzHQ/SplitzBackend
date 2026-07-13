@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using SplitzBackend.Models;
+using SplitzBackend.Services;
 
 namespace SplitzBackend.Tests;
 
@@ -17,6 +19,8 @@ public sealed class RateLimitingWebApplicationFactory : WebApplicationFactory<Pr
     private readonly string databasePath = Path.Combine(
         Path.GetTempPath(),
         $"splitz-rate-limiting-{Guid.NewGuid():N}.db");
+
+    internal CapturingRateLimitLogger Logs { get; } = new();
 
     public RateLimitingWebApplicationFactory()
         : this(new Dictionary<string, string?>())
@@ -52,6 +56,12 @@ public sealed class RateLimitingWebApplicationFactory : WebApplicationFactory<Pr
             services.AddSingleton<RecordingIdentityEmailSender>();
             services.AddSingleton<IEmailSender<SplitzUser>>(provider =>
                 provider.GetRequiredService<RecordingIdentityEmailSender>());
+            services.RemoveAll<IImageStorageService>();
+            services.AddSingleton<BlockingImageStorageService>();
+            services.AddSingleton<IImageStorageService>(provider =>
+                provider.GetRequiredService<BlockingImageStorageService>());
+            services.RemoveAll<ILogger<Services.RateLimiting.RateLimitRejectionWriter>>();
+            services.AddSingleton<ILogger<Services.RateLimiting.RateLimitRejectionWriter>>(Logs);
         });
     }
 
@@ -71,6 +81,83 @@ public sealed class RateLimitingWebApplicationFactory : WebApplicationFactory<Pr
     {
         if (File.Exists(path))
             File.Delete(path);
+    }
+}
+
+internal sealed class CapturingRateLimitLogger : ILogger<Services.RateLimiting.RateLimitRejectionWriter>
+{
+    private readonly System.Collections.Concurrent.ConcurrentQueue<string> messages = new();
+
+    public IReadOnlyCollection<string> Messages => messages.ToArray();
+
+    public void Reset()
+    {
+        messages.Clear();
+    }
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        messages.Enqueue(formatter(state, exception));
+    }
+}
+
+internal sealed class BlockingImageStorageService : IImageStorageService
+{
+    private readonly SemaphoreSlim enteredUploads = new(0);
+    private TaskCompletionSource releaseUploads = CompletedRelease();
+    private int uploadCount;
+
+    public int UploadCount => Volatile.Read(ref uploadCount);
+
+    public void StartBlocking()
+    {
+        releaseUploads = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
+
+    public void Release()
+    {
+        releaseUploads.TrySetResult();
+    }
+
+    public async Task WaitForUploadsAsync(int count, TimeSpan timeout)
+    {
+        using var cancellation = new CancellationTokenSource(timeout);
+        for (var index = 0; index < count; index++)
+            await enteredUploads.WaitAsync(cancellation.Token);
+    }
+
+    public async Task<UploadImageResult> UploadProcessedImageAsync(
+        Stream input,
+        string? inputContentType,
+        string objectKey,
+        ImageResizeRequest resize,
+        CancellationToken cancellationToken)
+    {
+        var count = Interlocked.Increment(ref uploadCount);
+        enteredUploads.Release();
+        await releaseUploads.Task.WaitAsync(cancellationToken);
+        return new UploadImageResult($"{objectKey}-{count}.webp", "image/webp");
+    }
+
+    public Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
+    private static TaskCompletionSource CompletedRelease()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        release.SetResult();
+        return release;
     }
 }
 

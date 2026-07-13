@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-5 complete
+Status: Implementation in progress; Tasks 1-6 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -85,16 +85,16 @@ Depends on: Task 1
 
 Depends on: Task 1
 
-- [ ] Add upload endpoint metadata.
-- [ ] Add metadata-gated process-wide concurrency limiter with limit 5 and queue size 0.
-- [ ] Add per-user hourly upload limiter with limit 200 and 12 segments.
-- [ ] Preserve unauthenticated behavior through a no-op upload partition before authorization.
-- [ ] Apply upload policies to `POST /account/avatar`.
-- [ ] Add controllable blocking image-storage test fake.
-- [ ] Test sixth concurrent request rejection, per-user hourly isolation, and non-upload exclusion.
-- [ ] Add avatar cooldown, picker guards, and localized profile copy.
-- [ ] Add `ProfilePage` component tests.
-- [ ] Focused verification passes as listed in Task 6 of `tasks/plan.md`.
+- [x] Add upload endpoint metadata.
+- [x] Add metadata-gated process-wide concurrency limiter with limit 5 and queue size 0.
+- [x] Add per-user hourly upload limiter with limit 200 and 12 segments.
+- [x] Preserve unauthenticated behavior through a no-op upload partition before authorization.
+- [x] Apply upload policies to `POST /account/avatar`.
+- [x] Add controllable blocking image-storage test fake.
+- [x] Test sixth concurrent request rejection, per-user hourly isolation, and non-upload exclusion.
+- [x] Add avatar cooldown, picker guards, and localized profile copy.
+- [x] Add `ProfilePage` component tests.
+- [x] Focused verification passes as listed in Task 6 of `tasks/plan.md`.
 
 ## Task 7: Transaction-Receipt Retry Path
 
