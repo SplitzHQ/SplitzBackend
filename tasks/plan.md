@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-9 complete
+Status: Implementation complete; production enablement pending trusted proxy configuration and human confirmation
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-13
@@ -425,23 +425,50 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] All 16 specification acceptance criteria have corresponding automated coverage or an explicit deployment verification step.
-- [ ] Backend and frontend validation commands pass.
-- [ ] No secrets, raw emails, account keys, client partition values, passwords, confirmation codes, or reset codes appear in logs or committed fixtures.
-- [ ] No endpoint outside the approved scope is limited or documents `429`.
-- [ ] Production enablement remains blocked until the real trusted proxy/network value is configured.
+- [x] All 16 specification acceptance criteria have corresponding automated coverage or an explicit deployment verification step.
+- [x] Backend and frontend validation commands pass.
+- [x] No secrets, raw emails, account keys, client partition values, passwords, confirmation codes, or reset codes appear in logs or committed fixtures.
+- [x] No endpoint outside the approved scope is limited or documents `429`.
+- [x] Production enablement remains blocked until the real trusted proxy/network value is configured.
+
+**Acceptance coverage:**
+
+| Criterion | Evidence |
+| --- | --- |
+| 1 | Approved defaults are asserted by `RateLimitOptionsTests`; below-limit behavior is exercised by each anonymous policy suite and the avatar boundary tests. |
+| 2 | Anonymous threshold-plus-one and endpoint non-execution are covered by the login, registration, email-delivery, confirmation, and password-reset suites plus `RateLimitRejectionWriterTests`. |
+| 3 | IP and normalized-account isolation are covered by `RateLimitingLoginTests` and the policy-specific hosted suites. |
+| 4 | Case and surrounding-whitespace normalization are covered across login, registration, email delivery, and password reset. |
+| 5 | Shared recovery and reset pools are covered by `RateLimitingEmailDeliveryTests` and `RateLimitingPasswordResetTests`. |
+| 6 | Known and unknown email rejection parity, including response timing tolerance, is covered by `KnownAndUnknownEmailsHaveEquivalentRateLimitResponses`. |
+| 7 | The five-active/sixth-rejected upload boundary and five-second fallback are covered by `RateLimitingAvatarUploadTests` and the cross-route upload-pool test. |
+| 8 | The 201st upload rejection and cross-user isolation are covered using the approved default by `AvatarHourlyQuotaRejectsThe201stRequestAndIsIsolatedByUser`. |
+| 9 | Both upload pools are proven across all four routes by `RateLimitingUploadPoolTests`. |
+| 10 | The login hosted test asserts CORS exposure of `Retry-After`; the deployed frontend-origin check remains in Production Enablement. |
+| 11 | Parser/composable tests and the login, registration, recovery, reset, confirmation, profile, and receipt component tests cover countdowns, disabled commands, and manual retry. |
+| 12 | Confirmation component and Playwright tests keep `429` distinct from invalid or expired links. |
+| 13 | `AddExpenseDetailsSheet.spec.ts` proves receipt retry does not create a second transaction. |
+| 14 | `RateLimitOptionsTests` proves Production validation requires proxy trust; startup with the real deployment value remains a deployment check. |
+| 15 | `RateLimitOpenApiTests` asserts the exact 12-operation `429` document set and complete response contract. |
+| 16 | Rejection-writer, avatar, and hardening tests exclude submitted secrets and IP/account/user partition values; controlled deployment log inspection remains in Production Enablement. |
+
+**Residual review notes:**
+
+- Release and Docker artifacts now exclude ignored `appsettings.Development.json`; any previously valid Resend credential still requires provider-side rotation.
+- `bun audit` reports vulnerabilities in the development/build dependency graph. A sandbox refresh within current manifest ranges does not clear them; remediation requires a separate dependency-maintenance change rather than a rate-limit patch.
+- Below-limit password-recovery requests can still have known/unknown timing differences because known users synchronously await email delivery. Correct remediation requires an approved queued-delivery design and is not hidden behind an artificial delay.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.sln`
-- [ ] `dotnet build SplitzBackend.sln`
-- [ ] `dotnet format SplitzBackend.sln --verify-no-changes`
-- [ ] `bun run type-check`
-- [ ] `bun run test:unit --run`
-- [ ] `bun run test:e2e e2e/auth-email.spec.ts`
-- [ ] `bun run lint`
-- [ ] `bun run format:check`
-- [ ] `git diff --check` in both repositories
+- [x] `dotnet test SplitzBackend.sln`
+- [x] `dotnet build SplitzBackend.sln`
+- [x] `dotnet format SplitzBackend.sln --verify-no-changes`
+- [x] `bun run type-check`
+- [x] `bun run test:unit --run`
+- [x] `bun run test:e2e e2e/auth-email.spec.ts`
+- [x] `bun run lint`
+- [x] `bun run format:check`
+- [x] `git diff --check` in both repositories
 
 ## Parallelization And Coordination
 

@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-9 complete
+Status: Implementation complete; production enablement pending trusted proxy configuration and human confirmation
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -140,17 +140,17 @@ Depends on: Tasks 2, 3, 4, 5, 7, and 8
 
 Depends on: Task 9 and all feature slices
 
-- [ ] Run the complete endpoint inventory and threshold matrix with isolated limiter state.
-- [ ] Verify every generated `429` contract, CORS exposure, safe log shape, and retry fallback.
-- [ ] Verify disabled enforcement bypasses limits without missing-policy failures.
-- [ ] Verify application restart resets process-local counters.
-- [ ] Map all 16 specification acceptance criteria to automated coverage or deployment checks.
-- [ ] Run full backend test, build, and format validation.
-- [ ] Run full frontend type-check, unit, E2E, lint, and format validation.
-- [ ] Run `git diff --check` in both repositories.
-- [ ] Review diffs for unrelated files, credentials, lockfiles, and unintended generated changes.
+- [x] Run the complete endpoint inventory and threshold matrix with isolated limiter state.
+- [x] Verify every generated `429` contract, CORS exposure, safe log shape, and retry fallback.
+- [x] Verify disabled enforcement bypasses limits without missing-policy failures.
+- [x] Verify application restart resets process-local counters.
+- [x] Map all 16 specification acceptance criteria to automated coverage or deployment checks.
+- [x] Run full backend test, build, and format validation.
+- [x] Run full frontend type-check, unit, E2E, lint, and format validation.
+- [x] Run `git diff --check` in both repositories.
+- [x] Review diffs for unrelated files, credentials, lockfiles, and unintended generated changes.
 - [ ] Update specification/plan status only after human confirmation.
-- [ ] Record the trusted proxy IP/CIDR as an unresolved deployment prerequisite without inventing a value.
+- [x] Record the trusted proxy IP/CIDR as an unresolved deployment prerequisite without inventing a value.
 
 ## Production Enablement
 

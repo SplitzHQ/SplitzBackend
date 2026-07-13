@@ -34,7 +34,7 @@ public class RateLimitOpenApiTests
         Assert.NotNull(document.Paths);
 
         var documentedOperations = document.Paths!
-            .SelectMany(path => path.Value.Operations
+            .SelectMany(path => (path.Value.Operations ?? [])
                 .Where(operation => operation.Value.Responses?.ContainsKey("429") ?? false)
                 .Select(operation => (path.Key, operation.Key.Method)))
             .OrderBy(operation => operation.Key, StringComparer.Ordinal)
