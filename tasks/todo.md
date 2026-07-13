@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Task 1 complete
+Status: Implementation in progress; Tasks 1-2 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -34,13 +34,13 @@ Depends on: Review Gate
 
 Depends on: Task 1
 
-- [ ] Add registration IP and normalized-email pools with approved defaults.
-- [ ] Apply policies and endpoint metadata to `POST /account/register`.
-- [ ] Add registration `429` cooldown and submit guards.
-- [ ] Preserve successful registration, capability lookup, and non-`429` failures.
-- [ ] Add hosted registration and endpoint inventory tests.
-- [ ] Extend registration component tests.
-- [ ] Focused verification passes as listed in Task 2 of `tasks/plan.md`.
+- [x] Add registration IP and normalized-email pools with approved defaults.
+- [x] Apply policies and endpoint metadata to `POST /account/register`.
+- [x] Add registration `429` cooldown and submit guards.
+- [x] Preserve successful registration, capability lookup, and non-`429` failures.
+- [x] Add hosted registration and endpoint inventory tests.
+- [x] Extend registration component tests.
+- [x] Focused verification passes as listed in Task 2 of `tasks/plan.md`.
 
 ## Task 3: Shared Email-Delivery Path
 

@@ -13,24 +13,47 @@ public static class IdentityRateLimitingEndpointConventionExtensions
         builder.Add(endpointBuilder =>
         {
             if (endpointBuilder is not RouteEndpointBuilder routeEndpointBuilder
-                || !IsLoginRoute(routeEndpointBuilder)
                 || !SupportsPost(endpointBuilder))
                 return;
 
-            endpointBuilder.Metadata.Add(new EnableRateLimitingAttribute(RateLimitPolicyNames.LoginIp));
-            endpointBuilder.Metadata.Add(new RateLimitEndpointMetadata("login", "ip"));
-            endpointBuilder.Metadata.Add(new AccountRateLimitEndpointMetadata("login"));
-            endpointBuilder.FilterFactories.Add(LoginAccountRateLimitEndpointFilter.Create);
+            if (IsRoute(routeEndpointBuilder, "account/login"))
+            {
+                AddRateLimits(
+                    endpointBuilder,
+                    RateLimitPolicyNames.LoginIp,
+                    "login",
+                    LoginAccountRateLimitEndpointFilter.Create);
+            }
+            else if (IsRoute(routeEndpointBuilder, "account/register"))
+            {
+                AddRateLimits(
+                    endpointBuilder,
+                    RateLimitPolicyNames.RegistrationIp,
+                    "registration",
+                    RegistrationAccountRateLimitEndpointFilter.Create);
+            }
         });
 
         return builder;
     }
 
-    private static bool IsLoginRoute(RouteEndpointBuilder endpointBuilder)
+    private static void AddRateLimits(
+        EndpointBuilder endpointBuilder,
+        string policyName,
+        string category,
+        Func<EndpointFilterFactoryContext, EndpointFilterDelegate, EndpointFilterDelegate> filterFactory)
+    {
+        endpointBuilder.Metadata.Add(new EnableRateLimitingAttribute(policyName));
+        endpointBuilder.Metadata.Add(new RateLimitEndpointMetadata(category, "ip"));
+        endpointBuilder.Metadata.Add(new AccountRateLimitEndpointMetadata(category));
+        endpointBuilder.FilterFactories.Add(filterFactory);
+    }
+
+    private static bool IsRoute(RouteEndpointBuilder endpointBuilder, string route)
     {
         return string.Equals(
             endpointBuilder.RoutePattern.RawText?.TrimStart('/'),
-            "account/login",
+            route,
             StringComparison.OrdinalIgnoreCase);
     }
 

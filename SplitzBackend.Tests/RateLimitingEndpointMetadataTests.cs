@@ -11,7 +11,7 @@ namespace SplitzBackend.Tests;
 public class RateLimitingEndpointMetadataTests
 {
     [Fact]
-    public void OnlyTheGeneratedLoginPostEndpointHasTaskOneRateLimitMetadata()
+    public void GeneratedLoginAndRegistrationPostEndpointsHaveTheirExpectedRateLimitMetadata()
     {
         using var factory = new RateLimitingWebApplicationFactory();
         using var client = factory.CreateClient();
@@ -19,21 +19,41 @@ public class RateLimitingEndpointMetadataTests
         var protectedEndpoints = endpoints
             .OfType<RouteEndpoint>()
             .Where(endpoint => endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>() is not null)
+            .OrderBy(endpoint => endpoint.RoutePattern.RawText)
             .ToList();
 
-        var loginEndpoint = Assert.Single(protectedEndpoints);
-        Assert.Equal("/account/login", loginEndpoint.RoutePattern.RawText);
+        Assert.Collection(
+            protectedEndpoints,
+            endpoint => AssertEndpoint(
+                endpoint,
+                "/account/login",
+                RateLimitPolicyNames.LoginIp,
+                "login"),
+            endpoint => AssertEndpoint(
+                endpoint,
+                "/account/register",
+                "registration-ip",
+                "registration"));
+    }
+
+    private static void AssertEndpoint(
+        RouteEndpoint endpoint,
+        string route,
+        string policyName,
+        string category)
+    {
+        Assert.Equal(route, endpoint.RoutePattern.RawText);
         Assert.Contains(
             HttpMethods.Post,
-            loginEndpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods);
+            endpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods);
         Assert.Equal(
-            RateLimitPolicyNames.LoginIp,
-            loginEndpoint.Metadata.GetRequiredMetadata<EnableRateLimitingAttribute>().PolicyName);
+            policyName,
+            endpoint.Metadata.GetRequiredMetadata<EnableRateLimitingAttribute>().PolicyName);
         Assert.Equal(
-            new RateLimitEndpointMetadata("login", "ip"),
-            loginEndpoint.Metadata.GetRequiredMetadata<RateLimitEndpointMetadata>());
+            new RateLimitEndpointMetadata(category, "ip"),
+            endpoint.Metadata.GetRequiredMetadata<RateLimitEndpointMetadata>());
         Assert.Equal(
-            new AccountRateLimitEndpointMetadata("login"),
-            loginEndpoint.Metadata.GetRequiredMetadata<AccountRateLimitEndpointMetadata>());
+            new AccountRateLimitEndpointMetadata(category),
+            endpoint.Metadata.GetRequiredMetadata<AccountRateLimitEndpointMetadata>());
     }
 }

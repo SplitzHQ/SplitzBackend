@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Task 1 complete
+Status: Implementation in progress; Tasks 1-2 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-12
@@ -164,16 +164,16 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] Registration requests below threshold preserve existing behavior.
-- [ ] IP and normalized-email thresholds reject before Identity registration executes.
-- [ ] Unknown/new emails receive the same neutral rejection contract as any other partition.
-- [ ] Registration shows the countdown and disables only its submit command until expiry.
-- [ ] Existing successful registration and generic non-`429` failure tests remain valid.
+- [x] Registration requests below threshold preserve existing behavior.
+- [x] IP and normalized-email thresholds reject before Identity registration executes.
+- [x] Unknown/new emails receive the same neutral rejection contract as any other partition.
+- [x] Registration shows the countdown and disables only its submit command until expiry.
+- [x] Existing successful registration and generic non-`429` failure tests remain valid.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingRegistrationTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
-- [ ] `bun run test:unit --run src/pages/RegisterPage/__tests__/RegisterPage.spec.ts`
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingRegistrationTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `bun run test:unit --run src/pages/RegisterPage/__tests__/RegisterPage.spec.ts`
 
 ## Task 3: Deliver The Shared Email-Delivery Path
 
