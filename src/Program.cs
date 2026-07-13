@@ -4,6 +4,7 @@ using AutoMapper.EquivalencyExpression;
 using FluentStorage;
 using FluentStorage.Blobs;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
@@ -12,6 +13,7 @@ using Scalar.AspNetCore;
 using SplitzBackend.Models;
 using SplitzBackend.OpenAPIGen.Filter;
 using SplitzBackend.Services;
+using SplitzBackend.Services.RateLimiting;
 
 namespace SplitzBackend;
 
@@ -36,6 +38,7 @@ public class Program
         // configure routing and controllers
         builder.Services.AddControllers();
         builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
+        builder.Services.AddSplitzRateLimiting(builder.Configuration, builder.Environment);
 
         // configure default cors policy to allow all origins
         builder.Services.AddCors(options =>
@@ -45,6 +48,7 @@ public class Program
                 policy.AllowAnyOrigin();
                 policy.AllowAnyMethod();
                 policy.AllowAnyHeader();
+                policy.WithExposedHeaders("Retry-After");
             });
         });
 
@@ -170,6 +174,7 @@ public class Program
         builder.Services.AddScoped<IInvoiceDebtService, InvoiceDebtService>();
 
         var app = builder.Build();
+        app.UseForwardedHeaders();
 
         using (var scope = app.Services.CreateScope())
         {
@@ -196,12 +201,15 @@ public class Program
             app.MapScalarApiReference();
         }
 
+        app.UseRouting();
         app.UseCors();
-
+        app.UseAuthentication();
+        app.UseRateLimiter();
         app.UseAuthorization();
 
         var accountGroup = app.MapGroup("/account");
-        accountGroup.MapIdentityApi<SplitzUser>();
+        accountGroup.MapIdentityApi<SplitzUser>()
+            .AddSplitzIdentityRateLimits();
         accountGroup.MapAccountRecoveryEndpoints();
         app.MapControllers();
 
