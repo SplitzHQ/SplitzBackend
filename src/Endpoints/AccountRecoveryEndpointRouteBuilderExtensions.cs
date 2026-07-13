@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.Data;
 using SplitzBackend.Services;
+using SplitzBackend.Services.RateLimiting;
 
 namespace SplitzBackend;
 
@@ -16,7 +17,8 @@ public static class AccountRecoveryEndpointRouteBuilderExtensions
             })
             .WithName("RequestAccountRecovery")
             .AllowAnonymous()
-            .Produces(StatusCodes.Status200OK);
+            .Produces(StatusCodes.Status200OK)
+            .AddSplitzEmailDeliveryRateLimits();
 
         accountGroup.MapPost("/recovery/reset", async (
                 ResetPasswordRequest request,

@@ -2,9 +2,12 @@ using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using SplitzBackend.Models;
 
 namespace SplitzBackend.Tests;
 
@@ -42,7 +45,14 @@ public sealed class RateLimitingWebApplicationFactory : WebApplicationFactory<Pr
         {
             configuration.AddInMemoryCollection(testConfiguration);
         });
-        builder.ConfigureServices(services => services.AddSingleton<IStartupFilter, TestRemoteIpStartupFilter>());
+        builder.ConfigureServices(services =>
+        {
+            services.AddSingleton<IStartupFilter, TestRemoteIpStartupFilter>();
+            services.RemoveAll<IEmailSender<SplitzUser>>();
+            services.AddSingleton<RecordingIdentityEmailSender>();
+            services.AddSingleton<IEmailSender<SplitzUser>>(provider =>
+                provider.GetRequiredService<RecordingIdentityEmailSender>());
+        });
     }
 
     protected override void Dispose(bool disposing)
@@ -61,6 +71,36 @@ public sealed class RateLimitingWebApplicationFactory : WebApplicationFactory<Pr
     {
         if (File.Exists(path))
             File.Delete(path);
+    }
+}
+
+internal sealed class RecordingIdentityEmailSender : IEmailSender<SplitzUser>
+{
+    private int deliveryCount;
+
+    public int DeliveryCount => Volatile.Read(ref deliveryCount);
+
+    public Task SendConfirmationLinkAsync(SplitzUser user, string email, string confirmationLink)
+    {
+        Interlocked.Increment(ref deliveryCount);
+        return Task.CompletedTask;
+    }
+
+    public Task SendPasswordResetLinkAsync(SplitzUser user, string email, string resetLink)
+    {
+        Interlocked.Increment(ref deliveryCount);
+        return Task.CompletedTask;
+    }
+
+    public Task SendPasswordResetCodeAsync(SplitzUser user, string email, string resetCode)
+    {
+        Interlocked.Increment(ref deliveryCount);
+        return Task.CompletedTask;
+    }
+
+    public void Reset()
+    {
+        Interlocked.Exchange(ref deliveryCount, 0);
     }
 }
 

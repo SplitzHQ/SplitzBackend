@@ -2,6 +2,7 @@ namespace SplitzBackend.Services.RateLimiting;
 
 public static class RateLimitPolicyNames
 {
+    public const string EmailDeliveryIp = "email-delivery-ip";
     public const string LoginIp = "login-ip";
     public const string RegistrationIp = "registration-ip";
 }

@@ -32,8 +32,20 @@ public static class IdentityRateLimitingEndpointConventionExtensions
                     "registration",
                     RegistrationAccountRateLimitEndpointFilter.Create);
             }
+            else if (IsRoute(routeEndpointBuilder, "account/forgotPassword")
+                || IsRoute(routeEndpointBuilder, "account/resendConfirmationEmail"))
+            {
+                AddEmailDeliveryRateLimits(endpointBuilder);
+            }
         });
 
+        return builder;
+    }
+
+    public static IEndpointConventionBuilder AddSplitzEmailDeliveryRateLimits(
+        this IEndpointConventionBuilder builder)
+    {
+        builder.Add(AddEmailDeliveryRateLimits);
         return builder;
     }
 
@@ -47,6 +59,15 @@ public static class IdentityRateLimitingEndpointConventionExtensions
         endpointBuilder.Metadata.Add(new RateLimitEndpointMetadata(category, "ip"));
         endpointBuilder.Metadata.Add(new AccountRateLimitEndpointMetadata(category));
         endpointBuilder.FilterFactories.Add(filterFactory);
+    }
+
+    private static void AddEmailDeliveryRateLimits(EndpointBuilder endpointBuilder)
+    {
+        AddRateLimits(
+            endpointBuilder,
+            RateLimitPolicyNames.EmailDeliveryIp,
+            "email-delivery",
+            EmailDeliveryAccountRateLimitEndpointFilter.Create);
     }
 
     private static bool IsRoute(RouteEndpointBuilder endpointBuilder, string route)

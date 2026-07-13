@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-2 complete
+Status: Implementation in progress; Tasks 1-3 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-12
@@ -201,17 +201,17 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] All three routes share one IP pool and one normalized-email pool.
-- [ ] The endpoint is not executed after either lease is rejected, preventing email delivery.
-- [ ] Resend and recovery copy remains neutral and enumeration-resistant.
-- [ ] Login and resend cooldowns do not disable or reset each other.
-- [ ] Forgot-password remains on the request form after `429`, shows a live countdown, and requires manual retry.
+- [x] All three routes share one IP pool and one normalized-email pool.
+- [x] The endpoint is not executed after either lease is rejected, preventing email delivery.
+- [x] Resend and recovery copy remains neutral and enumeration-resistant.
+- [x] Login and resend cooldowns do not disable or reset each other.
+- [x] Forgot-password remains on the request form after `429`, shows a live countdown, and requires manual retry.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingEmailDeliveryTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
-- [ ] `bun run test:unit --run src/pages/LoginPage/__tests__/LoginPage.spec.ts src/pages/ForgotPasswordPage/__tests__/ForgotPasswordPage.spec.ts`
-- [ ] `bun run test:e2e e2e/auth-email.spec.ts --grep "recovery rate limit"`
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingEmailDeliveryTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `bun run test:unit --run src/pages/LoginPage/__tests__/LoginPage.spec.ts src/pages/ForgotPasswordPage/__tests__/ForgotPasswordPage.spec.ts`
+- [x] `bun run test:e2e e2e/auth-email.spec.ts --grep "recovery rate limit"`
 
 ## Task 4: Deliver The Email-Confirmation Path
 

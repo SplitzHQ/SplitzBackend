@@ -11,7 +11,7 @@ namespace SplitzBackend.Tests;
 public class RateLimitingEndpointMetadataTests
 {
     [Fact]
-    public void GeneratedLoginAndRegistrationPostEndpointsHaveTheirExpectedRateLimitMetadata()
+    public void ProtectedAccountEndpointsHaveTheirExpectedRateLimitMetadata()
     {
         using var factory = new RateLimitingWebApplicationFactory();
         using var client = factory.CreateClient();
@@ -26,14 +26,29 @@ public class RateLimitingEndpointMetadataTests
             protectedEndpoints,
             endpoint => AssertEndpoint(
                 endpoint,
+                "/account/forgotPassword",
+                "email-delivery-ip",
+                "email-delivery"),
+            endpoint => AssertEndpoint(
+                endpoint,
                 "/account/login",
                 RateLimitPolicyNames.LoginIp,
                 "login"),
             endpoint => AssertEndpoint(
                 endpoint,
+                "/account/recovery/request",
+                "email-delivery-ip",
+                "email-delivery"),
+            endpoint => AssertEndpoint(
+                endpoint,
                 "/account/register",
                 "registration-ip",
-                "registration"));
+                "registration"),
+            endpoint => AssertEndpoint(
+                endpoint,
+                "/account/resendConfirmationEmail",
+                "email-delivery-ip",
+                "email-delivery"));
     }
 
     private static void AssertEndpoint(

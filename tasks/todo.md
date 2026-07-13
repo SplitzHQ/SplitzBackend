@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-2 complete
+Status: Implementation in progress; Tasks 1-3 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -46,14 +46,14 @@ Depends on: Task 1
 
 Depends on: Task 1
 
-- [ ] Add one shared IP pool and one shared normalized-email pool for resend, built-in forgot-password, and custom recovery request.
-- [ ] Apply policies to all three generated/custom routes.
-- [ ] Test cross-route quota consumption and known/unknown email parity.
-- [ ] Activate independent resend cooldown on the login screen.
-- [ ] Add forgot-password cooldown without entering the submitted state after `429`.
-- [ ] Extend login and forgot-password component tests.
-- [ ] Add recovery rate-limit E2E coverage.
-- [ ] Focused verification passes as listed in Task 3 of `tasks/plan.md`.
+- [x] Add one shared IP pool and one shared normalized-email pool for resend, built-in forgot-password, and custom recovery request.
+- [x] Apply policies to all three generated/custom routes.
+- [x] Test cross-route quota consumption and known/unknown email parity.
+- [x] Activate independent resend cooldown on the login screen.
+- [x] Add forgot-password cooldown without entering the submitted state after `429`.
+- [x] Extend login and forgot-password component tests.
+- [x] Add recovery rate-limit E2E coverage.
+- [x] Focused verification passes as listed in Task 3 of `tasks/plan.md`.
 
 ## Task 4: Email-Confirmation Path
 
