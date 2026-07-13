@@ -48,6 +48,11 @@ public static class IdentityRateLimitingEndpointConventionExtensions
             {
                 AddEmailDeliveryRateLimits(endpointBuilder);
             }
+            else if (IsRoute(routeEndpointBuilder, "account/resetPassword")
+                && SupportsMethod(endpointBuilder, HttpMethods.Post))
+            {
+                AddPasswordResetRateLimits(endpointBuilder);
+            }
         });
 
         return builder;
@@ -57,6 +62,13 @@ public static class IdentityRateLimitingEndpointConventionExtensions
         this IEndpointConventionBuilder builder)
     {
         builder.Add(AddEmailDeliveryRateLimits);
+        return builder;
+    }
+
+    public static IEndpointConventionBuilder AddSplitzPasswordResetRateLimits(
+        this IEndpointConventionBuilder builder)
+    {
+        builder.Add(AddPasswordResetRateLimits);
         return builder;
     }
 
@@ -79,6 +91,15 @@ public static class IdentityRateLimitingEndpointConventionExtensions
             RateLimitPolicyNames.EmailDeliveryIp,
             "email-delivery",
             EmailDeliveryAccountRateLimitEndpointFilter.Create);
+    }
+
+    private static void AddPasswordResetRateLimits(EndpointBuilder endpointBuilder)
+    {
+        AddRateLimits(
+            endpointBuilder,
+            RateLimitPolicyNames.PasswordResetIp,
+            "password-reset",
+            PasswordResetAccountRateLimitEndpointFilter.Create);
     }
 
     private static bool IsRoute(RouteEndpointBuilder endpointBuilder, string route)

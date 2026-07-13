@@ -40,7 +40,7 @@ public static class EmailDeliveryAccountRateLimitEndpointFilter
                 category: "email-delivery",
                 partitionType: "account",
                 invocationContext.HttpContext.RequestAborted);
-            return null;
+            return Results.Empty;
         };
     }
 

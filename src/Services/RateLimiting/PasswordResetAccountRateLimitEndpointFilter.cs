@@ -1,31 +1,29 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.Options;
 
 namespace SplitzBackend.Services.RateLimiting;
 
-public static class EmailConfirmationAccountRateLimitEndpointFilter
+public static class PasswordResetAccountRateLimitEndpointFilter
 {
     public static EndpointFilterDelegate Create(
-        EndpointFilterFactoryContext factoryContext,
+        EndpointFilterFactoryContext _,
         EndpointFilterDelegate next)
     {
-        var userIdArgumentIndex = Array.FindIndex(
-            factoryContext.MethodInfo.GetParameters(),
-            parameter => string.Equals(parameter.Name, "userId", StringComparison.OrdinalIgnoreCase));
-
         return async invocationContext =>
         {
-            if (userIdArgumentIndex < 0
-                || userIdArgumentIndex >= invocationContext.Arguments.Count
-                || invocationContext.Arguments[userIdArgumentIndex] is not string userId
-                || string.IsNullOrWhiteSpace(userId))
+            var reset = invocationContext.Arguments.OfType<ResetPasswordRequest>().SingleOrDefault();
+            if (reset is null)
                 return await next(invocationContext);
 
             var services = invocationContext.HttpContext.RequestServices;
-            var limiter = services.GetRequiredService<EmailConfirmationAccountRateLimiter>();
+            var normalizer = services.GetRequiredService<ILookupNormalizer>();
+            var normalizedEmail = normalizer.NormalizeEmail(reset.Email?.Trim() ?? string.Empty) ?? string.Empty;
+            var limiter = services.GetRequiredService<PasswordResetAccountRateLimiter>();
 
             using var lease = await limiter.AcquireAsync(
-                userId,
+                normalizedEmail,
                 invocationContext.HttpContext.RequestAborted);
             if (lease.IsAcquired)
                 return await next(invocationContext);
@@ -39,7 +37,7 @@ public static class EmailConfirmationAccountRateLimitEndpointFilter
             await writer.WriteAsync(
                 invocationContext.HttpContext,
                 retryAfter,
-                category: "email-confirmation",
+                category: "password-reset",
                 partitionType: "account",
                 invocationContext.HttpContext.RequestAborted);
             return Results.Empty;

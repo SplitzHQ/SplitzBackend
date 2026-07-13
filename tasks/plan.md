@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-4 complete
+Status: Implementation in progress; Tasks 1-5 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-12
@@ -269,16 +269,16 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] Built-in and custom reset variants share both quota pools.
-- [ ] Equivalent email spellings share one account partition.
-- [ ] Rejected requests do not execute password reset logic.
-- [ ] Reset validation messages remain unchanged for non-`429` responses.
-- [ ] Rate-limited reset displays neutral countdown copy and requires a manual retry.
+- [x] Built-in and custom reset variants share both quota pools.
+- [x] Equivalent email spellings share one account partition.
+- [x] Rejected requests do not execute password reset logic.
+- [x] Reset validation messages remain unchanged for non-`429` responses.
+- [x] Rate-limited reset displays neutral countdown copy and requires a manual retry.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingPasswordResetTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
-- [ ] `bun run test:unit --run src/pages/ResetPasswordPage/__tests__/ResetPasswordPage.spec.ts`
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingPasswordResetTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `bun run test:unit --run src/pages/ResetPasswordPage/__tests__/ResetPasswordPage.spec.ts`
 
 ## Task 6: Deliver The User-Avatar Upload Path
 

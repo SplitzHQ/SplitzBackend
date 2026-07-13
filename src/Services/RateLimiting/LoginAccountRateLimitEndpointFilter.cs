@@ -40,7 +40,7 @@ public static class LoginAccountRateLimitEndpointFilter
                 category: "login",
                 partitionType: "account",
                 invocationContext.HttpContext.RequestAborted);
-            return null;
+            return Results.Empty;
         };
     }
 }

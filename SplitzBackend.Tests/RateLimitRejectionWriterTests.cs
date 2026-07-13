@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Patterns;
+using Microsoft.Extensions.Logging;
 using SplitzBackend.Services.RateLimiting;
 using Xunit;
 
@@ -13,7 +15,18 @@ public class RateLimitRejectionWriterTests
     {
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
-        var writer = new RateLimitRejectionWriter(NullLogger<RateLimitRejectionWriter>.Instance);
+        context.Request.Method = HttpMethods.Post;
+        context.Request.Path = "/account/recovery/reset";
+        context.Request.QueryString = new QueryString(
+            "?email=secret%40example.com&resetCode=secret-token&newPassword=SecretPassword1234");
+        context.SetEndpoint(new RouteEndpoint(
+            _ => Task.CompletedTask,
+            RoutePatternFactory.Parse("/account/recovery/reset"),
+            order: 0,
+            EndpointMetadataCollection.Empty,
+            displayName: null));
+        var logger = new CapturingLogger<RateLimitRejectionWriter>();
+        var writer = new RateLimitRejectionWriter(logger);
 
         await writer.WriteAsync(
             context,
@@ -32,5 +45,30 @@ public class RateLimitRejectionWriterTests
         Assert.Equal("rate_limit_exceeded", body.RootElement.GetProperty("code").GetString());
         Assert.DoesNotContain("login", body.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("account", body.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+
+        var log = Assert.Single(logger.Messages);
+        Assert.Contains("POST /account/recovery/reset", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret@example.com", log, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("secret-token", log, StringComparison.Ordinal);
+        Assert.DoesNotContain("SecretPassword1234", log, StringComparison.Ordinal);
+    }
+}
+
+internal sealed class CapturingLogger<T> : ILogger<T>
+{
+    public List<string> Messages { get; } = [];
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        Messages.Add(formatter(state, exception));
     }
 }

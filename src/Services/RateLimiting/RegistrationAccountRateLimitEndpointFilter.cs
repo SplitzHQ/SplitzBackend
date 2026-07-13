@@ -40,7 +40,7 @@ public static class RegistrationAccountRateLimitEndpointFilter
                 category: "registration",
                 partitionType: "account",
                 invocationContext.HttpContext.RequestAborted);
-            return null;
+            return Results.Empty;
         };
     }
 }

@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-4 complete
+Status: Implementation in progress; Tasks 1-5 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -72,14 +72,14 @@ Depends on: Task 1
 
 Depends on: Task 1
 
-- [ ] Add shared IP and normalized-email pools for built-in and custom reset routes.
-- [ ] Apply policies to `POST /account/resetPassword` and `POST /account/recovery/reset`.
-- [ ] Test cross-route quota consumption and prevention of reset execution after rejection.
-- [ ] Handle `429` before reset validation-problem parsing.
-- [ ] Add reset countdown and submission guards.
-- [ ] Preserve mismatch, password-policy, invalid-token, success, and generic errors.
-- [ ] Add hosted reset and component tests.
-- [ ] Focused verification passes as listed in Task 5 of `tasks/plan.md`.
+- [x] Add shared IP and normalized-email pools for built-in and custom reset routes.
+- [x] Apply policies to `POST /account/resetPassword` and `POST /account/recovery/reset`.
+- [x] Test cross-route quota consumption and prevention of reset execution after rejection.
+- [x] Handle `429` before reset validation-problem parsing.
+- [x] Add reset countdown and submission guards.
+- [x] Preserve mismatch, password-policy, invalid-token, success, and generic errors.
+- [x] Add hosted reset and component tests.
+- [x] Focused verification passes as listed in Task 5 of `tasks/plan.md`.
 
 ## Task 6: User-Avatar Upload Path
 

@@ -47,6 +47,11 @@ public class RateLimitingEndpointMetadataTests
                 "email-delivery"),
             endpoint => AssertEndpoint(
                 endpoint,
+                "/account/recovery/reset",
+                "password-reset-ip",
+                "password-reset"),
+            endpoint => AssertEndpoint(
+                endpoint,
                 "/account/register",
                 "registration-ip",
                 "registration"),
@@ -54,7 +59,12 @@ public class RateLimitingEndpointMetadataTests
                 endpoint,
                 "/account/resendConfirmationEmail",
                 "email-delivery-ip",
-                "email-delivery"));
+                "email-delivery"),
+            endpoint => AssertEndpoint(
+                endpoint,
+                "/account/resetPassword",
+                "password-reset-ip",
+                "password-reset"));
     }
 
     private static void AssertEndpoint(

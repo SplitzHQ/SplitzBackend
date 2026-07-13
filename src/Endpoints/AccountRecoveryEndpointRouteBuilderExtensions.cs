@@ -42,7 +42,8 @@ public static class AccountRecoveryEndpointRouteBuilderExtensions
             .WithName("ResetRecoveredAccountPassword")
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
-            .ProducesValidationProblem(StatusCodes.Status400BadRequest);
+            .ProducesValidationProblem(StatusCodes.Status400BadRequest)
+            .AddSplitzPasswordResetRateLimits();
 
         return accountGroup;
     }
