@@ -26,6 +26,12 @@ public class RateLimitingEndpointMetadataTests
             protectedEndpoints,
             endpoint => AssertEndpoint(
                 endpoint,
+                "/account/confirmEmail",
+                "email-confirmation-ip",
+                "email-confirmation",
+                HttpMethods.Get),
+            endpoint => AssertEndpoint(
+                endpoint,
                 "/account/forgotPassword",
                 "email-delivery-ip",
                 "email-delivery"),
@@ -55,11 +61,12 @@ public class RateLimitingEndpointMetadataTests
         RouteEndpoint endpoint,
         string route,
         string policyName,
-        string category)
+        string category,
+        string method = "POST")
     {
         Assert.Equal(route, endpoint.RoutePattern.RawText);
         Assert.Contains(
-            HttpMethods.Post,
+            method,
             endpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods);
         Assert.Equal(
             policyName,

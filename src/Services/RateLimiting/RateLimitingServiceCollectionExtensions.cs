@@ -47,6 +47,7 @@ public static class RateLimitingServiceCollectionExtensions
             });
 
         services.AddSingleton<RateLimitRejectionWriter>();
+        services.AddSingleton<EmailConfirmationAccountRateLimiter>();
         services.AddSingleton<EmailDeliveryAccountRateLimiter>();
         services.AddSingleton<LoginAccountRateLimiter>();
         services.AddSingleton<RegistrationAccountRateLimiter>();
@@ -112,6 +113,27 @@ public static class RateLimitingServiceCollectionExtensions
 
                 return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ =>
                     CreateSlidingWindowOptions(rateLimitOptions.EmailDelivery.Ip));
+            });
+
+            options.AddPolicy(RateLimitPolicyNames.EmailConfirmationIp, context =>
+            {
+                var rateLimitOptions = context.RequestServices
+                    .GetRequiredService<IOptions<RateLimitOptions>>()
+                    .Value;
+                if (!rateLimitOptions.Enabled)
+                    return RateLimitPartition.GetNoLimiter("disabled");
+
+                var remoteAddress = context.Connection.RemoteIpAddress;
+                var partitionKey = remoteAddress?.ToString() ?? "unknown";
+                if (remoteAddress is null)
+                {
+                    context.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("SplitzBackend.RateLimiting")
+                        .LogWarning("Client IP address is unavailable; using the shared unknown rate-limit partition.");
+                }
+
+                return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ =>
+                    CreateSlidingWindowOptions(rateLimitOptions.EmailConfirmation.Ip));
             });
 
             options.AddPolicy(RateLimitPolicyNames.RegistrationIp, context =>

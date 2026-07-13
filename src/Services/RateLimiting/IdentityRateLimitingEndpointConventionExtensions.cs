@@ -12,11 +12,20 @@ public static class IdentityRateLimitingEndpointConventionExtensions
     {
         builder.Add(endpointBuilder =>
         {
-            if (endpointBuilder is not RouteEndpointBuilder routeEndpointBuilder
-                || !SupportsPost(endpointBuilder))
+            if (endpointBuilder is not RouteEndpointBuilder routeEndpointBuilder)
                 return;
 
-            if (IsRoute(routeEndpointBuilder, "account/login"))
+            if (IsRoute(routeEndpointBuilder, "account/confirmEmail")
+                && SupportsMethod(endpointBuilder, HttpMethods.Get))
+            {
+                AddRateLimits(
+                    endpointBuilder,
+                    RateLimitPolicyNames.EmailConfirmationIp,
+                    "email-confirmation",
+                    EmailConfirmationAccountRateLimitEndpointFilter.Create);
+            }
+            else if (IsRoute(routeEndpointBuilder, "account/login")
+                && SupportsMethod(endpointBuilder, HttpMethods.Post))
             {
                 AddRateLimits(
                     endpointBuilder,
@@ -24,7 +33,8 @@ public static class IdentityRateLimitingEndpointConventionExtensions
                     "login",
                     LoginAccountRateLimitEndpointFilter.Create);
             }
-            else if (IsRoute(routeEndpointBuilder, "account/register"))
+            else if (IsRoute(routeEndpointBuilder, "account/register")
+                && SupportsMethod(endpointBuilder, HttpMethods.Post))
             {
                 AddRateLimits(
                     endpointBuilder,
@@ -32,8 +42,9 @@ public static class IdentityRateLimitingEndpointConventionExtensions
                     "registration",
                     RegistrationAccountRateLimitEndpointFilter.Create);
             }
-            else if (IsRoute(routeEndpointBuilder, "account/forgotPassword")
-                || IsRoute(routeEndpointBuilder, "account/resendConfirmationEmail"))
+            else if ((IsRoute(routeEndpointBuilder, "account/forgotPassword")
+                    || IsRoute(routeEndpointBuilder, "account/resendConfirmationEmail"))
+                && SupportsMethod(endpointBuilder, HttpMethods.Post))
             {
                 AddEmailDeliveryRateLimits(endpointBuilder);
             }
@@ -78,10 +89,10 @@ public static class IdentityRateLimitingEndpointConventionExtensions
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool SupportsPost(EndpointBuilder endpointBuilder)
+    private static bool SupportsMethod(EndpointBuilder endpointBuilder, string method)
     {
         return endpointBuilder.Metadata
             .OfType<IHttpMethodMetadata>()
-            .Any(metadata => metadata.HttpMethods.Contains(HttpMethods.Post, StringComparer.OrdinalIgnoreCase));
+            .Any(metadata => metadata.HttpMethods.Contains(method, StringComparer.OrdinalIgnoreCase));
     }
 }

@@ -1,6 +1,6 @@
 # Rate Limiting Implementation Plan
 
-Status: Implementation in progress; Tasks 1-3 complete
+Status: Implementation in progress; Tasks 1-4 complete
 Source: `tasks/spec.md`
 Repositories: SplitzBackend and SplitzFrontend
 Last updated: 2026-07-12
@@ -235,17 +235,17 @@ flowchart TD
 
 **Acceptance criteria:**
 
-- [ ] Confirmation attempts partition by trusted client IP and submitted `userId`.
-- [ ] Confirmation codes never enter partition keys or logs.
-- [ ] A `429` response never renders the expired/invalid-link message.
-- [ ] Retry remains disabled until countdown expiry and invokes exactly one manual confirmation request afterward.
-- [ ] Initial mount still confirms valid links automatically once.
+- [x] Confirmation attempts partition by trusted client IP and submitted `userId`.
+- [x] Confirmation codes never enter partition keys or logs.
+- [x] A `429` response never renders the expired/invalid-link message.
+- [x] Retry remains disabled until countdown expiry and invokes exactly one manual confirmation request afterward.
+- [x] Initial mount still confirms valid links automatically once.
 
 **Verification:**
 
-- [ ] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingConfirmationTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
-- [ ] `bun run test:unit --run src/pages/ConfirmEmailPage/__tests__/ConfirmEmailPage.spec.ts`
-- [ ] `bun run test:e2e e2e/auth-email.spec.ts --grep "confirmation rate limit"`
+- [x] `dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj --filter "FullyQualifiedName~RateLimitingConfirmationTests|FullyQualifiedName~RateLimitingEndpointMetadataTests"`
+- [x] `bun run test:unit --run src/pages/ConfirmEmailPage/__tests__/ConfirmEmailPage.spec.ts`
+- [x] `bun run test:e2e e2e/auth-email.spec.ts --grep "confirmation rate limit"`
 
 ## Task 5: Deliver The Shared Password-Reset Path
 

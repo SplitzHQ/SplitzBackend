@@ -2,7 +2,7 @@
 
 Source plan: `tasks/plan.md`
 Source specification: `tasks/spec.md`
-Status: Implementation in progress; Tasks 1-3 complete
+Status: Implementation in progress; Tasks 1-4 complete
 
 Update this checklist incrementally during implementation. Do not mark a task complete until its focused verification passes.
 
@@ -59,14 +59,14 @@ Depends on: Task 1
 
 Depends on: Task 1
 
-- [ ] Add confirmation IP and submitted-user-ID pools with approved defaults.
-- [ ] Apply policies and metadata to `GET /account/confirmEmail`.
-- [ ] Ensure confirmation codes never enter keys or logs.
-- [ ] Refactor confirmation request into a reusable action.
-- [ ] Add a dedicated rate-limited state, countdown, and manual retry button.
-- [ ] Preserve incomplete-link, success, and ordinary expired-link behavior.
-- [ ] Add hosted confirmation, component, and E2E tests.
-- [ ] Focused verification passes as listed in Task 4 of `tasks/plan.md`.
+- [x] Add confirmation IP and submitted-user-ID pools with approved defaults.
+- [x] Apply policies and metadata to `GET /account/confirmEmail`.
+- [x] Ensure confirmation codes never enter keys or logs.
+- [x] Refactor confirmation request into a reusable action.
+- [x] Add a dedicated rate-limited state, countdown, and manual retry button.
+- [x] Preserve incomplete-link, success, and ordinary expired-link behavior.
+- [x] Add hosted confirmation, component, and E2E tests.
+- [x] Focused verification passes as listed in Task 4 of `tasks/plan.md`.
 
 ## Task 5: Shared Password-Reset Path
 
