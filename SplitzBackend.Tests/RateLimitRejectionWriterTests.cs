@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SplitzBackend.Services.RateLimiting;
 using Xunit;
 
@@ -26,7 +27,7 @@ public class RateLimitRejectionWriterTests
             EndpointMetadataCollection.Empty,
             displayName: null));
         var logger = new CapturingLogger<RateLimitRejectionWriter>();
-        var writer = new RateLimitRejectionWriter(logger);
+        var writer = new RateLimitRejectionWriter(Options.Create(new RateLimitOptions()), logger);
 
         await writer.WriteAsync(
             context,

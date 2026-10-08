@@ -19,9 +19,10 @@ dotnet restore
 dotnet build
 dotnet run --project SplitzBackend.csproj
 dotnet format SplitzBackend.sln --verify-no-changes
+dotnet test SplitzBackend.Tests/SplitzBackend.Tests.csproj
 ```
 
-There is currently no backend test project. Do not claim `dotnet test` validates backend behavior unless a test project has been added.
+Backend tests live in [SplitzBackend.Tests](SplitzBackend.Tests) (xUnit). Rate limiting tests boot the real app through `RateLimitingWebApplicationFactory` with a throwaway SQLite file, so they exercise the full middleware pipeline.
 
 ## Local Runtime
 
@@ -29,6 +30,7 @@ There is currently no backend test project. Do not claim `dotnet test` validates
 - Development startup applies pending EF migrations automatically and seeds sample users/groups only when no users exist.
 - OpenAPI is served only in Development. Swashbuckle is the active generator at `/openapi/{documentName}.json`; Scalar UI is mapped by `MapScalarApiReference()`.
 - `appsettings.json` contains placeholder S3 values. Image upload and signed photo URLs require real `Storage` config.
+- Rate limits are configured under `RateLimiting`; the defaults and every tunable live in [src/Services/RateLimiting/RateLimitOptions.cs](src/Services/RateLimiting/RateLimitOptions.cs), so `appsettings.json` only lists keys that differ. In Production, startup fails unless `TrustedProxies` or `TrustedNetworks` is set or `Enabled` is false, because an unconfigured proxy would make every client share one IP partition.
 
 ## API And Data Conventions
 

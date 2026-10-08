@@ -1,5 +1,6 @@
 namespace SplitzBackend.Services.RateLimiting;
 
+/// <summary>Names of the policies registered with <c>AddRateLimiter</c>, used by <c>[EnableRateLimiting]</c>.</summary>
 public static class RateLimitPolicyNames
 {
     public const string EmailConfirmationIp = "email-confirmation-ip";
@@ -10,9 +11,22 @@ public static class RateLimitPolicyNames
     public const string UploadPerUser = "upload-per-user";
 }
 
-public sealed record RateLimitEndpointMetadata(string Category, string PartitionType);
+/// <summary>Workflow being limited. Used as the account limiter key and in rejection logs.</summary>
+public static class RateLimitCategories
+{
+    public const string EmailConfirmation = "email-confirmation";
+    public const string EmailDelivery = "email-delivery";
+    public const string Login = "login";
+    public const string PasswordReset = "password-reset";
+    public const string Registration = "registration";
+    public const string Upload = "upload";
+}
 
-public sealed record AccountRateLimitEndpointMetadata(string Category);
-
-[AttributeUsage(AttributeTargets.Method)]
-public sealed class UploadRateLimitEndpointMetadataAttribute : Attribute;
+/// <summary>What a rejected request was partitioned by. Only appears in rejection logs.</summary>
+public static class RateLimitPartitionTypes
+{
+    public const string Account = "account";
+    public const string Global = "global";
+    public const string Ip = "ip";
+    public const string User = "user";
+}

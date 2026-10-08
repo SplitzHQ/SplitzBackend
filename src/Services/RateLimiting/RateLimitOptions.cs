@@ -1,8 +1,13 @@
 using System.Net;
+using System.Threading.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace SplitzBackend.Services.RateLimiting;
 
+/// <summary>
+/// Bound from the <c>RateLimiting</c> configuration section. The property initializers are the
+/// production defaults, so appsettings only needs to list values that differ.
+/// </summary>
 public sealed class RateLimitOptions
 {
     public const string SectionName = "RateLimiting";
@@ -11,26 +16,27 @@ public sealed class RateLimitOptions
     public int DefaultRetryAfterSeconds { get; set; } = 60;
     public List<string> TrustedProxies { get; set; } = [];
     public List<string> TrustedNetworks { get; set; } = [];
-    public AccountRateLimitOptions Login { get; set; } = AccountRateLimitOptions.Create(20, 10, 300, 5);
-    public AccountRateLimitOptions Registration { get; set; } = AccountRateLimitOptions.Create(10, 6, 3600, 12);
-    public AccountRateLimitOptions EmailDelivery { get; set; } = AccountRateLimitOptions.Create(10, 6, 3600, 12);
-    public AccountRateLimitOptions EmailConfirmation { get; set; } = AccountRateLimitOptions.Create(20, 10, 900, 15);
-    public AccountRateLimitOptions PasswordReset { get; set; } = AccountRateLimitOptions.Create(20, 10, 900, 15);
+    public EndpointRateLimitOptions Login { get; set; } = EndpointRateLimitOptions.Create(20, 10, 300, 5);
+    public EndpointRateLimitOptions Registration { get; set; } = EndpointRateLimitOptions.Create(10, 6, 3600, 12);
+    public EndpointRateLimitOptions EmailDelivery { get; set; } = EndpointRateLimitOptions.Create(10, 6, 3600, 12);
+    public EndpointRateLimitOptions EmailConfirmation { get; set; } = EndpointRateLimitOptions.Create(20, 10, 900, 15);
+    public EndpointRateLimitOptions PasswordReset { get; set; } = EndpointRateLimitOptions.Create(20, 10, 900, 15);
     public UploadRateLimitOptions Upload { get; set; } = new();
 }
 
-public sealed class AccountRateLimitOptions
+/// <summary>Limits for one anonymous account workflow: a per-IP window and a per-account (email or user id) window.</summary>
+public sealed class EndpointRateLimitOptions
 {
     public SlidingWindowRateLimitOptions Ip { get; set; } = new();
     public SlidingWindowRateLimitOptions Account { get; set; } = new();
 
-    public static AccountRateLimitOptions Create(
+    public static EndpointRateLimitOptions Create(
         int ipPermitLimit,
         int accountPermitLimit,
         int windowSeconds,
         int segmentsPerWindow)
     {
-        return new AccountRateLimitOptions
+        return new EndpointRateLimitOptions
         {
             Ip = SlidingWindowRateLimitOptions.Create(ipPermitLimit, windowSeconds, segmentsPerWindow),
             Account = SlidingWindowRateLimitOptions.Create(accountPermitLimit, windowSeconds, segmentsPerWindow)
@@ -43,7 +49,6 @@ public sealed class SlidingWindowRateLimitOptions
     public int PermitLimit { get; set; }
     public int WindowSeconds { get; set; }
     public int SegmentsPerWindow { get; set; }
-    public int QueueLimit { get; set; }
 
     public static SlidingWindowRateLimitOptions Create(int permitLimit, int windowSeconds, int segmentsPerWindow)
     {
@@ -51,8 +56,21 @@ public sealed class SlidingWindowRateLimitOptions
         {
             PermitLimit = permitLimit,
             WindowSeconds = windowSeconds,
-            SegmentsPerWindow = segmentsPerWindow,
-            QueueLimit = 0
+            SegmentsPerWindow = segmentsPerWindow
+        };
+    }
+
+    /// <summary>Requests are never queued: a request over the limit is rejected immediately.</summary>
+    public SlidingWindowRateLimiterOptions ToLimiterOptions()
+    {
+        return new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = PermitLimit,
+            Window = TimeSpan.FromSeconds(WindowSeconds),
+            SegmentsPerWindow = SegmentsPerWindow,
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = true
         };
     }
 }
@@ -100,11 +118,15 @@ public sealed class RateLimitOptionsValidator(string environmentName) : IValidat
             if (!IPNetwork.TryParse(network, out _))
                 failures.Add($"RateLimiting:TrustedNetworks contains invalid CIDR network '{network}'.");
 
+        // Behind an unconfigured proxy every client shares the proxy's address, so one busy user would
+        // lock the whole site out of login. Refusing to start is safer than silently limiting by proxy IP.
         if (options.Enabled
             && environmentName.Equals("Production", StringComparison.OrdinalIgnoreCase)
             && options.TrustedProxies.Count == 0
             && options.TrustedNetworks.Count == 0)
-            failures.Add("Rate limiting in Production requires at least one trusted proxy or trusted network.");
+            failures.Add(
+                "Rate limiting in Production requires at least one trusted proxy or trusted network. "
+                + "Set RateLimiting:TrustedProxies / RateLimiting:TrustedNetworks, or RateLimiting:Enabled=false when Kestrel is exposed directly.");
 
         return failures.Count == 0
             ? ValidateOptionsResult.Success
@@ -122,7 +144,5 @@ public sealed class RateLimitOptionsValidator(string environmentName) : IValidat
             failures.Add($"{path}:WindowSeconds must be greater than zero.");
         if (options.SegmentsPerWindow <= 0)
             failures.Add($"{path}:SegmentsPerWindow must be greater than zero.");
-        if (options.QueueLimit != 0)
-            failures.Add($"{path}:QueueLimit must be zero.");
     }
 }

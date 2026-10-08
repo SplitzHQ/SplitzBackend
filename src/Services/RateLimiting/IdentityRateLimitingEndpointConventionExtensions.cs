@@ -1,10 +1,15 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 
 namespace SplitzBackend.Services.RateLimiting;
 
+/// <summary>
+/// Attaches the per-IP policy and the per-account filter to the anonymous account endpoints. Identity's
+/// endpoints are matched by route because <c>MapIdentityApi</c> returns them as one group.
+/// </summary>
 public static class IdentityRateLimitingEndpointConventionExtensions
 {
     public static IEndpointConventionBuilder AddSplitzIdentityRateLimits(
@@ -21,8 +26,7 @@ public static class IdentityRateLimitingEndpointConventionExtensions
                 AddRateLimits(
                     endpointBuilder,
                     RateLimitPolicyNames.EmailConfirmationIp,
-                    "email-confirmation",
-                    EmailConfirmationAccountRateLimitEndpointFilter.Create);
+                    AccountRateLimitEndpointFilter.ForUserId(RateLimitCategories.EmailConfirmation));
             }
             else if (IsRoute(routeEndpointBuilder, "account/login")
                 && SupportsMethod(endpointBuilder, HttpMethods.Post))
@@ -30,8 +34,9 @@ public static class IdentityRateLimitingEndpointConventionExtensions
                 AddRateLimits(
                     endpointBuilder,
                     RateLimitPolicyNames.LoginIp,
-                    "login",
-                    LoginAccountRateLimitEndpointFilter.Create);
+                    AccountRateLimitEndpointFilter.ForEmail(
+                        RateLimitCategories.Login,
+                        arguments => arguments.OfType<LoginRequest>().SingleOrDefault()?.Email));
             }
             else if (IsRoute(routeEndpointBuilder, "account/register")
                 && SupportsMethod(endpointBuilder, HttpMethods.Post))
@@ -39,8 +44,9 @@ public static class IdentityRateLimitingEndpointConventionExtensions
                 AddRateLimits(
                     endpointBuilder,
                     RateLimitPolicyNames.RegistrationIp,
-                    "registration",
-                    RegistrationAccountRateLimitEndpointFilter.Create);
+                    AccountRateLimitEndpointFilter.ForEmail(
+                        RateLimitCategories.Registration,
+                        arguments => arguments.OfType<RegisterRequest>().SingleOrDefault()?.Email));
             }
             else if ((IsRoute(routeEndpointBuilder, "account/forgotPassword")
                     || IsRoute(routeEndpointBuilder, "account/resendConfirmationEmail"))
@@ -74,14 +80,11 @@ public static class IdentityRateLimitingEndpointConventionExtensions
 
     private static void AddRateLimits(
         EndpointBuilder endpointBuilder,
-        string policyName,
-        string category,
-        Func<EndpointFilterFactoryContext, EndpointFilterDelegate, EndpointFilterDelegate> filterFactory)
+        string ipPolicyName,
+        Func<EndpointFilterFactoryContext, EndpointFilterDelegate, EndpointFilterDelegate> accountFilterFactory)
     {
-        endpointBuilder.Metadata.Add(new EnableRateLimitingAttribute(policyName));
-        endpointBuilder.Metadata.Add(new RateLimitEndpointMetadata(category, "ip"));
-        endpointBuilder.Metadata.Add(new AccountRateLimitEndpointMetadata(category));
-        endpointBuilder.FilterFactories.Add(filterFactory);
+        endpointBuilder.Metadata.Add(new EnableRateLimitingAttribute(ipPolicyName));
+        endpointBuilder.FilterFactories.Add(accountFilterFactory);
     }
 
     private static void AddEmailDeliveryRateLimits(EndpointBuilder endpointBuilder)
@@ -89,8 +92,10 @@ public static class IdentityRateLimitingEndpointConventionExtensions
         AddRateLimits(
             endpointBuilder,
             RateLimitPolicyNames.EmailDeliveryIp,
-            "email-delivery",
-            EmailDeliveryAccountRateLimitEndpointFilter.Create);
+            AccountRateLimitEndpointFilter.ForEmail(
+                RateLimitCategories.EmailDelivery,
+                arguments => arguments.OfType<ForgotPasswordRequest>().SingleOrDefault()?.Email
+                    ?? arguments.OfType<ResendConfirmationEmailRequest>().SingleOrDefault()?.Email));
     }
 
     private static void AddPasswordResetRateLimits(EndpointBuilder endpointBuilder)
@@ -98,8 +103,9 @@ public static class IdentityRateLimitingEndpointConventionExtensions
         AddRateLimits(
             endpointBuilder,
             RateLimitPolicyNames.PasswordResetIp,
-            "password-reset",
-            PasswordResetAccountRateLimitEndpointFilter.Create);
+            AccountRateLimitEndpointFilter.ForEmail(
+                RateLimitCategories.PasswordReset,
+                arguments => arguments.OfType<ResetPasswordRequest>().SingleOrDefault()?.Email));
     }
 
     private static bool IsRoute(RouteEndpointBuilder endpointBuilder, string route)

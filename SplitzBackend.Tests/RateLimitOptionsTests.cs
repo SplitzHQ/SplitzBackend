@@ -72,7 +72,6 @@ public class RateLimitOptionsTests
     [InlineData("permit-limit", "RateLimiting:Login:Ip:PermitLimit")]
     [InlineData("window", "RateLimiting:Login:Account:WindowSeconds")]
     [InlineData("segments", "RateLimiting:Registration:Ip:SegmentsPerWindow")]
-    [InlineData("queue", "RateLimiting:EmailDelivery:Account:QueueLimit")]
     [InlineData("upload-concurrency", "RateLimiting:Upload:GlobalConcurrencyPermitLimit")]
     [InlineData("upload-retry", "RateLimiting:Upload:ConcurrencyRetryAfterSeconds")]
     public void ValidationRejectsEachInvalidPolicySetting(string setting, string expectedPath)
@@ -91,9 +90,6 @@ public class RateLimitOptionsTests
                 break;
             case "segments":
                 options.Registration.Ip.SegmentsPerWindow = 0;
-                break;
-            case "queue":
-                options.EmailDelivery.Account.QueueLimit = 1;
                 break;
             case "upload-concurrency":
                 options.Upload.GlobalConcurrencyPermitLimit = 0;
@@ -120,6 +116,6 @@ public class RateLimitOptionsTests
         Assert.Equal(permitLimit, options.PermitLimit);
         Assert.Equal(windowSeconds, options.WindowSeconds);
         Assert.Equal(segmentsPerWindow, options.SegmentsPerWindow);
-        Assert.Equal(0, options.QueueLimit);
+        Assert.Equal(0, options.ToLimiterOptions().QueueLimit);
     }
 }

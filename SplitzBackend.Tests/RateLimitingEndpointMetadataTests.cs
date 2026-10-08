@@ -31,44 +31,36 @@ public class RateLimitingEndpointMetadataTests
         AssertEndpoint(
                 protectedEndpoints["/account/confirmemail"],
                 "/account/confirmEmail",
-                "email-confirmation-ip",
-                "email-confirmation",
+                RateLimitPolicyNames.EmailConfirmationIp,
                 HttpMethods.Get);
         AssertEndpoint(
                 protectedEndpoints["/account/forgotpassword"],
                 "/account/forgotPassword",
-                "email-delivery-ip",
-                "email-delivery");
+                RateLimitPolicyNames.EmailDeliveryIp);
         AssertEndpoint(
                 protectedEndpoints["/account/login"],
                 "/account/login",
-                RateLimitPolicyNames.LoginIp,
-                "login");
+                RateLimitPolicyNames.LoginIp);
         AssertEndpoint(
                 protectedEndpoints["/account/recovery/request"],
                 "/account/recovery/request",
-                "email-delivery-ip",
-                "email-delivery");
+                RateLimitPolicyNames.EmailDeliveryIp);
         AssertEndpoint(
                 protectedEndpoints["/account/recovery/reset"],
                 "/account/recovery/reset",
-                "password-reset-ip",
-                "password-reset");
+                RateLimitPolicyNames.PasswordResetIp);
         AssertEndpoint(
                 protectedEndpoints["/account/register"],
                 "/account/register",
-                "registration-ip",
-                "registration");
+                RateLimitPolicyNames.RegistrationIp);
         AssertEndpoint(
                 protectedEndpoints["/account/resendconfirmationemail"],
                 "/account/resendConfirmationEmail",
-                "email-delivery-ip",
-                "email-delivery");
+                RateLimitPolicyNames.EmailDeliveryIp);
         AssertEndpoint(
                 protectedEndpoints["/account/resetpassword"],
                 "/account/resetPassword",
-                "password-reset-ip",
-                "password-reset");
+                RateLimitPolicyNames.PasswordResetIp);
 
         var uploadEndpoints = endpoints
             .OfType<RouteEndpoint>()
@@ -90,7 +82,6 @@ public class RateLimitingEndpointMetadataTests
         RouteEndpoint endpoint,
         string route,
         string policyName,
-        string category,
         string method = "POST")
     {
         Assert.Equal(route, endpoint.RoutePattern.RawText);
@@ -100,12 +91,7 @@ public class RateLimitingEndpointMetadataTests
         Assert.Equal(
             policyName,
             endpoint.Metadata.GetRequiredMetadata<EnableRateLimitingAttribute>().PolicyName);
-        Assert.Equal(
-            new RateLimitEndpointMetadata(category, "ip"),
-            endpoint.Metadata.GetRequiredMetadata<RateLimitEndpointMetadata>());
-        Assert.Equal(
-            new AccountRateLimitEndpointMetadata(category),
-            endpoint.Metadata.GetRequiredMetadata<AccountRateLimitEndpointMetadata>());
+        Assert.Null(endpoint.Metadata.GetMetadata<UploadRateLimitEndpointMetadataAttribute>());
     }
 
     private static void AssertUploadEndpoint(RouteEndpoint endpoint)
@@ -113,11 +99,10 @@ public class RateLimitingEndpointMetadataTests
         Assert.Contains(
             HttpMethods.Post,
             endpoint.Metadata.GetRequiredMetadata<IHttpMethodMetadata>().HttpMethods);
-        Assert.Equal("upload-per-user", endpoint.Metadata.GetRequiredMetadata<EnableRateLimitingAttribute>().PolicyName);
-        Assert.Contains(
-            endpoint.Metadata,
-            metadata => metadata.GetType().Name == "UploadRateLimitEndpointMetadataAttribute");
-        Assert.DoesNotContain(endpoint.Metadata, metadata => metadata is AccountRateLimitEndpointMetadata);
+        Assert.Equal(
+            RateLimitPolicyNames.UploadPerUser,
+            endpoint.Metadata.GetRequiredMetadata<EnableRateLimitingAttribute>().PolicyName);
+        Assert.NotNull(endpoint.Metadata.GetMetadata<UploadRateLimitEndpointMetadataAttribute>());
     }
 
     private static string NormalizeRoute(string? route)

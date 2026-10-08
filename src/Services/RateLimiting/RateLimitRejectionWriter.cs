@@ -1,9 +1,34 @@
+using System.Globalization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace SplitzBackend.Services.RateLimiting;
 
-public sealed class RateLimitRejectionWriter(ILogger<RateLimitRejectionWriter> logger)
+/// <summary>Writes the shared 429 response: a neutral problem document plus a <c>Retry-After</c> header.</summary>
+public sealed class RateLimitRejectionWriter(
+    IOptions<RateLimitOptions> options,
+    ILogger<RateLimitRejectionWriter> logger)
 {
+    /// <summary>
+    /// Writes the rejection using the lease's retry-after metadata, or <paramref name="fallbackRetryAfter"/>
+    /// (default: <c>DefaultRetryAfterSeconds</c>) when the lease carries none.
+    /// </summary>
+    public ValueTask WriteAsync(
+        HttpContext context,
+        RateLimitLease lease,
+        string category,
+        string partitionType,
+        TimeSpan? fallbackRetryAfter = null,
+        CancellationToken cancellationToken = default)
+    {
+        var retryAfter = lease.TryGetMetadata(MetadataName.RetryAfter, out var leaseRetryAfter)
+            ? leaseRetryAfter
+            : fallbackRetryAfter ?? TimeSpan.FromSeconds(options.Value.DefaultRetryAfterSeconds);
+
+        return WriteAsync(context, retryAfter, category, partitionType, cancellationToken);
+    }
+
     public async ValueTask WriteAsync(
         HttpContext context,
         TimeSpan retryAfter,
@@ -15,7 +40,7 @@ public sealed class RateLimitRejectionWriter(ILogger<RateLimitRejectionWriter> l
 
         context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.Response.ContentType = "application/problem+json";
-        context.Response.Headers.RetryAfter = retryAfterSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        context.Response.Headers.RetryAfter = retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
 
         logger.LogWarning(
             "Rate limit rejected {Method} {RoutePattern} for {Category} partition type {PartitionType}; retry after {RetryAfterSeconds} seconds.",

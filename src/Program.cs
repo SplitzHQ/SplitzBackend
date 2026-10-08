@@ -175,7 +175,6 @@ public class Program
         builder.Services.AddScoped<IInvoiceDebtService, InvoiceDebtService>();
 
         var app = builder.Build();
-        app.UseForwardedHeaders();
 
         using (var scope = app.Services.CreateScope())
         {
@@ -202,6 +201,8 @@ public class Program
             app.MapScalarApiReference();
         }
 
+        // Forwarded headers must run before anything that reads the client address (rate limiting).
+        app.UseForwardedHeaders();
         app.UseRouting();
         app.UseCors();
         app.UseAuthentication();
