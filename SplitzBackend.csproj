@@ -11,6 +11,9 @@
   <ItemGroup>
     <Compile Remove="SplitzBackend.Tests\**\*.cs" />
     <Content Remove="SplitzBackend.Tests\**\*" />
+    <Content Update="appsettings.Development.json"
+             CopyToOutputDirectory="Never"
+             CopyToPublishDirectory="Never" />
     <None Remove="SplitzBackend.Tests\**\*" />
   </ItemGroup>
   <ItemGroup>

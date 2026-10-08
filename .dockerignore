@@ -9,6 +9,7 @@
 **/.vs
 **/.vscode
 **/*.*proj.user
+**/appsettings.Development.json
 **/*.dbmdl
 **/*.jfm
 **/azds.yaml
