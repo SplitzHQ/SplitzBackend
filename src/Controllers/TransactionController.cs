@@ -18,7 +18,8 @@ public class TransactionController(
     UserManager<SplitzUser> userManager,
     IMapper mapper,
     IImageStorageService imageStorage,
-    IInvoiceDebtService invoiceDebtService) : ControllerBase
+    IInvoiceDebtService invoiceDebtService,
+    INotificationService notifications) : ControllerBase
 {
     /// <summary>
     ///     Get transaction by id
@@ -87,10 +88,50 @@ public class TransactionController(
         group.TransactionCount++;
         await context.SaveChangesAsync();
 
+        await NotifyTransactionCreatedAsync(group, transaction, user);
+        await context.SaveChangesAsync();
+
         await dbTransaction.CommitAsync();
 
         return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId },
             mapper.Map<TransactionDto>(transaction));
+    }
+
+    /// <summary>
+    ///     Tell group members about a new transaction. Members with a share get the "related" variant
+    ///     (higher priority); the rest get the plain group activity variant. The creator is skipped.
+    /// </summary>
+    private async Task NotifyTransactionCreatedAsync(Group group, Transaction transaction, SplitzUser creator)
+    {
+        var balanceByUser = transaction.Balances
+            .Where(b => b.Balance != 0)
+            .ToDictionary(b => b.UserId, b => b.Balance);
+
+        var recipients = group.Members.Where(m => m.Id != creator.Id).Select(m => m.Id).ToList();
+        var related = recipients.Where(balanceByUser.ContainsKey).ToList();
+        var unrelated = recipients.Except(related).ToList();
+
+        TransactionCreatedNotification BuildData(decimal? userBalance)
+        {
+            return new TransactionCreatedNotification
+            {
+                TransactionId = transaction.TransactionId,
+                GroupId = group.GroupId,
+                CreatorUserId = creator.Id,
+                TransactionName = transaction.Name,
+                Amount = transaction.Amount,
+                Currency = transaction.Currency,
+                UserBalance = userBalance
+            };
+        }
+
+        // Each related member gets their own share in the payload.
+        foreach (var userId in related)
+            await notifications.NotifyAsync([userId], NotificationTypes.RelatedTransactionCreated,
+                BuildData(balanceByUser[userId]), group.GroupId, transaction.TransactionId.ToString());
+
+        await notifications.NotifyAsync(unrelated, NotificationTypes.TransactionCreated,
+            BuildData(null), group.GroupId, transaction.TransactionId.ToString());
     }
 
     /// <summary>

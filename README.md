@@ -92,12 +92,21 @@ Custom controller endpoints require authorization unless marked otherwise. Ident
 
 Main API areas:
 
-- `/account`: profile, friend management, avatar upload, and Identity auth endpoints
-- `/group`: group list/detail, members, join links, group avatar, group transactions, and group invoices
+- `/account`: profile, friend requests (send, accept, ignore, cancel), friend management, avatar upload, and Identity auth endpoints
+- `/group`: group list/detail, member invites (send, accept, ignore), join links, group avatar, group transactions, and group invoices
 - `/transaction`: transaction detail/create/update/delete and receipt upload
 - `/transactiondraft`: draft detail/create/update/delete and receipt upload
 - `/invoice`: invoice list/detail/create/update/delete and settlement records
-- `/notification`: notification list, read, dismiss, and dismiss-all actions
+- `/notification`: notification list (filterable by category), unread summary, read/dismiss actions, the type catalog, and per-user preferences (global or per group)
+
+## Notifications
+
+Notifications are created through `INotificationService` in [src/Services/NotificationService.cs](src/Services/NotificationService.cs). Every type is registered in `NotificationCatalog` ([src/Models/Notification.cs](src/Models/Notification.cs)) with a category, a default priority, and whether the user may mute it.
+
+- `Request` category: `FriendRequest`, `GroupInvite`. These need an accept / ignore decision and cannot be muted. Accepting or ignoring the underlying request dismisses the notification.
+- `Activity` category: `FriendRequestAccepted`, `TransactionCreated`, `InvoiceCreated`, `SettlementRecorded`, `InvoiceSettled`, plus `Related*` variants that go to users who are part of the event (higher priority).
+
+Preferences are rows in `NotificationPreferences`: a row without `GroupId` is the global setting, a row with `GroupId` overrides it for that group, and no row means enabled.
 
 ## Validation
 
