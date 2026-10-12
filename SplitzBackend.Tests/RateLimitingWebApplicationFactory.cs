@@ -60,6 +60,8 @@ public sealed class RateLimitingWebApplicationFactory : WebApplicationFactory<Pr
             services.AddSingleton<BlockingImageStorageService>();
             services.AddSingleton<IImageStorageService>(provider =>
                 provider.GetRequiredService<BlockingImageStorageService>());
+            services.RemoveAll<IObjectStorage>();
+            services.AddSingleton<IObjectStorage, PassThroughObjectStorage>();
             services.RemoveAll<ILogger<Services.RateLimiting.RateLimitRejectionWriter>>();
             services.AddSingleton<ILogger<Services.RateLimiting.RateLimitRejectionWriter>>(Logs);
         });
@@ -158,6 +160,34 @@ internal sealed class BlockingImageStorageService : IImageStorageService
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         release.SetResult();
         return release;
+    }
+}
+
+/// <summary>
+///     Object storage stand-in for tests: photo values are returned unchanged and nothing is uploaded.
+/// </summary>
+internal sealed class PassThroughObjectStorage : IObjectStorage
+{
+    public Task UploadAsync(string objectKey, string contentType, Stream content,
+        CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
+    public string BuildRelativeUrl(string objectKey, TimeSpan roundingInterval, string cacheControl)
+    {
+        return "/" + objectKey;
+    }
+
+    public bool TryParseObjectKey(string? storedUrlOrKey, out string objectKey)
+    {
+        objectKey = string.Empty;
+        return false;
     }
 }
 

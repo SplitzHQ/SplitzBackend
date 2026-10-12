@@ -15,7 +15,7 @@ namespace SplitzBackend.src.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
 
             modelBuilder.Entity("GroupSplitzUser", b =>
                 {
@@ -179,6 +179,42 @@ namespace SplitzBackend.src.Migrations
                     b.ToTable("Friend");
                 });
 
+            modelBuilder.Entity("SplitzBackend.Models.FriendRequest", b =>
+                {
+                    b.Property<Guid>("FriendRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FromUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Remark")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RespondTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ToUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FriendRequestId");
+
+                    b.HasIndex("FromUserId", "Status");
+
+                    b.HasIndex("ToUserId", "Status");
+
+                    b.ToTable("FriendRequests");
+                });
+
             modelBuilder.Entity("SplitzBackend.Models.Group", b =>
                 {
                     b.Property<Guid>("GroupId")
@@ -231,6 +267,43 @@ namespace SplitzBackend.src.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("GroupBalance");
+                });
+
+            modelBuilder.Entity("SplitzBackend.Models.GroupInvite", b =>
+                {
+                    b.Property<Guid>("GroupInviteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InvitedByUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InvitedUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RespondTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("GroupInviteId");
+
+                    b.HasIndex("InvitedByUserId");
+
+                    b.HasIndex("GroupId", "Status");
+
+                    b.HasIndex("InvitedUserId", "Status");
+
+                    b.ToTable("GroupInvites");
                 });
 
             modelBuilder.Entity("SplitzBackend.Models.GroupJoinLink", b =>
@@ -355,18 +428,27 @@ namespace SplitzBackend.src.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Category")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("CreateTime")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
                         .IsRequired()
-                        .HasMaxLength(1024)
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("GroupId")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDismissed")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsRead")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ReferenceId")
@@ -384,9 +466,40 @@ namespace SplitzBackend.src.Migrations
 
                     b.HasKey("NotificationId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsDismissed", "CreateTime");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("SplitzBackend.Models.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("NotificationPreferenceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("GroupId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("NotificationPreferenceId");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("UserId", "Type", "GroupId")
+                        .IsUnique();
+
+                    b.ToTable("NotificationPreferences");
                 });
 
             modelBuilder.Entity("SplitzBackend.Models.SplitzUser", b =>
@@ -710,6 +823,25 @@ namespace SplitzBackend.src.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SplitzBackend.Models.FriendRequest", b =>
+                {
+                    b.HasOne("SplitzBackend.Models.SplitzUser", "FromUser")
+                        .WithMany()
+                        .HasForeignKey("FromUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitzBackend.Models.SplitzUser", "ToUser")
+                        .WithMany()
+                        .HasForeignKey("ToUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FromUser");
+
+                    b.Navigation("ToUser");
+                });
+
             modelBuilder.Entity("SplitzBackend.Models.GroupBalance", b =>
                 {
                     b.HasOne("SplitzBackend.Models.Group", "Group")
@@ -727,6 +859,33 @@ namespace SplitzBackend.src.Migrations
                     b.Navigation("Group");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SplitzBackend.Models.GroupInvite", b =>
+                {
+                    b.HasOne("SplitzBackend.Models.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitzBackend.Models.SplitzUser", "InvitedByUser")
+                        .WithMany()
+                        .HasForeignKey("InvitedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitzBackend.Models.SplitzUser", "InvitedUser")
+                        .WithMany()
+                        .HasForeignKey("InvitedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("InvitedByUser");
+
+                    b.Navigation("InvitedUser");
                 });
 
             modelBuilder.Entity("SplitzBackend.Models.GroupJoinLink", b =>
@@ -828,6 +987,24 @@ namespace SplitzBackend.src.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SplitzBackend.Models.NotificationPreference", b =>
+                {
+                    b.HasOne("SplitzBackend.Models.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SplitzBackend.Models.SplitzUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
 
                     b.Navigation("User");
                 });

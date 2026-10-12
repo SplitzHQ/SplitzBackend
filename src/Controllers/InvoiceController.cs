@@ -1,4 +1,3 @@
-using System.Text.Json;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -16,7 +15,8 @@ public class InvoiceController(
     SplitzDbContext context,
     UserManager<SplitzUser> userManager,
     IMapper mapper,
-    IInvoiceDebtService invoiceDebtService) : ControllerBase
+    IInvoiceDebtService invoiceDebtService,
+    INotificationService notifications) : ControllerBase
 {
     /// <summary>
     ///     List invoices for the current user's groups
@@ -131,30 +131,27 @@ public class InvoiceController(
 
         await dbTransaction.CommitAsync();
 
-        // Create notifications for involved group members (except creator)
+        // Members with a debt in the invoice get the related variant; other group members get plain activity.
         var involvedUserIds = debts
             .SelectMany(d => new[] { d.FromUserId, d.ToUserId })
             .Distinct()
-            .Where(id => id != user.Id);
+            .Where(id => id != user.Id)
+            .ToList();
+        var otherMemberIds = group.Members
+            .Select(m => m.Id)
+            .Where(id => id != user.Id && !involvedUserIds.Contains(id));
 
-        foreach (var userId in involvedUserIds)
-            context.Notifications.Add(new Notification
-            {
-                NotificationId = Guid.NewGuid(),
-                UserId = userId,
-                Type = "InvoiceCreated",
-                ReferenceId = invoice.InvoiceId.ToString(),
-                Data = JsonSerializer.Serialize(new InvoiceCreatedNotification
-                {
-                    CreatorName = user.UserName!,
-                    InvoiceName = invoice.Name,
-                    InvoiceId = invoice.InvoiceId,
-                    GroupId = invoice.GroupId
-                }, Notification.JsonOptions),
-                IsRead = false,
-                IsDismissed = false,
-                CreateTime = DateTime.UtcNow
-            });
+        var createdData = new InvoiceCreatedNotification
+        {
+            CreatorUserId = user.Id,
+            InvoiceName = invoice.Name,
+            InvoiceId = invoice.InvoiceId,
+            GroupId = invoice.GroupId
+        };
+        await notifications.NotifyAsync(involvedUserIds, NotificationTypes.RelatedInvoiceCreated, createdData,
+            group.GroupId, invoice.InvoiceId.ToString());
+        await notifications.NotifyAsync(otherMemberIds, NotificationTypes.InvoiceCreated, createdData,
+            group.GroupId, invoice.InvoiceId.ToString());
 
         await context.SaveChangesAsync();
 
@@ -352,66 +349,42 @@ public class InvoiceController(
 
         await context.SaveChangesAsync();
 
-        // Notify the receiver of the settlement
-        var settlementData = JsonSerializer.Serialize(new SettlementRecordedNotification
+        // The two parties get the related variant; other group members see it as plain activity.
+        var memberIds = invoice.Group.Members.Select(m => m.Id).ToList();
+        var settlementData = new SettlementRecordedNotification
         {
-            RecorderName = user.UserName!,
+            RecorderUserId = user.Id,
             Amount = input.Amount,
             Currency = invoice.Currency,
             FromUserId = input.FromUserId,
             ToUserId = input.ToUserId,
             InvoiceId = invoice.InvoiceId,
-            InvoiceName = invoice.Name
-        }, Notification.JsonOptions);
+            InvoiceName = invoice.Name,
+            GroupId = invoice.GroupId
+        };
 
-        if (input.ToUserId != user.Id)
-            context.Notifications.Add(new Notification
-            {
-                NotificationId = Guid.NewGuid(),
-                UserId = input.ToUserId,
-                Type = "SettlementRecorded",
-                ReferenceId = invoice.InvoiceId.ToString(),
-                Data = settlementData,
-                IsRead = false,
-                IsDismissed = false,
-                CreateTime = DateTime.UtcNow
-            });
+        var settlementParties = new[] { input.FromUserId, input.ToUserId }.Where(id => id != user.Id).ToList();
+        await notifications.NotifyAsync(settlementParties, NotificationTypes.RelatedSettlementRecorded,
+            settlementData, invoice.GroupId, invoice.InvoiceId.ToString());
+        await notifications.NotifyAsync(
+            memberIds.Where(id => id != user.Id && !settlementParties.Contains(id)),
+            NotificationTypes.SettlementRecorded, settlementData, invoice.GroupId, invoice.InvoiceId.ToString());
 
-        if (input.FromUserId != user.Id)
-            context.Notifications.Add(new Notification
-            {
-                NotificationId = Guid.NewGuid(),
-                UserId = input.FromUserId,
-                Type = "SettlementRecorded",
-                ReferenceId = invoice.InvoiceId.ToString(),
-                Data = settlementData,
-                IsRead = false,
-                IsDismissed = false,
-                CreateTime = DateTime.UtcNow
-            });
-
-        // Notify all involved when invoice is fully settled
+        // When the invoice closes, debtors and creditors get the related variant; the rest get plain activity.
         if (invoice.Status == InvoiceStatus.Settled)
         {
-            var settledData = JsonSerializer.Serialize(new InvoiceSettledNotification
+            var settledData = new InvoiceSettledNotification
             {
                 InvoiceId = invoice.InvoiceId,
                 InvoiceName = invoice.Name,
                 GroupId = invoice.GroupId
-            }, Notification.JsonOptions);
-
-            foreach (var userId in involvedUserIds.Where(uid => uid != user.Id))
-                context.Notifications.Add(new Notification
-                {
-                    NotificationId = Guid.NewGuid(),
-                    UserId = userId,
-                    Type = "InvoiceSettled",
-                    ReferenceId = invoice.InvoiceId.ToString(),
-                    Data = settledData,
-                    IsRead = false,
-                    IsDismissed = false,
-                    CreateTime = DateTime.UtcNow
-                });
+            };
+            var involved = involvedUserIds.Where(id => id != user.Id).ToList();
+            await notifications.NotifyAsync(involved, NotificationTypes.RelatedInvoiceSettled, settledData,
+                invoice.GroupId, invoice.InvoiceId.ToString());
+            await notifications.NotifyAsync(
+                memberIds.Where(id => id != user.Id && !involvedUserIds.Contains(id)),
+                NotificationTypes.InvoiceSettled, settledData, invoice.GroupId, invoice.InvoiceId.ToString());
         }
 
         await context.SaveChangesAsync();

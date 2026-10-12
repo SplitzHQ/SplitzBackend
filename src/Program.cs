@@ -173,6 +173,7 @@ public class Program
         builder.Services.AddSingleton<IImageProcessingService, NetVipsImageProcessingService>();
         builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
         builder.Services.AddScoped<IInvoiceDebtService, InvoiceDebtService>();
+        builder.Services.AddScoped<INotificationService, NotificationService>();
 
         var app = builder.Build();
 
