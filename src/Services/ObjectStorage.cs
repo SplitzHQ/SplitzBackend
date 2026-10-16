@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 using Microsoft.Extensions.Options;
 
 namespace SplitzBackend.Services;
@@ -13,16 +13,26 @@ public interface IObjectStorage
     bool TryParseObjectKey(string? storedUrlOrKey, out string objectKey);
 }
 
-public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOptions> options) : IObjectStorage
+/// <summary>
+/// Stores uploaded images in an S3-compatible bucket and signs image URLs.
+/// The bucket must exist before the first upload.
+/// </summary>
+public sealed class S3ObjectStorage(IStore blobStorage, IOptions<StorageOptions> options) : IObjectStorage
 {
     private readonly StorageOptions _options = options.Value;
 
+    /// <summary>
+    /// Uploads an image with its content type, replacing any object with the same key.
+    /// </summary>
     public async Task UploadAsync(string objectKey, string contentType, Stream content,
         CancellationToken cancellationToken)
     {
-        await blobStorage.WriteAsync(objectKey, content, cancellationToken: cancellationToken);
+        await blobStorage.SetObject(objectKey, content, contentType, cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// Deletes an application-owned object if possible. Other URLs and keys are ignored.
+    /// </summary>
     public async Task DeleteIfOwnedAsync(string? storedUrlOrKey, CancellationToken cancellationToken)
     {
         if (!TryParseObjectKey(storedUrlOrKey, out var key))
@@ -31,7 +41,7 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
         // If the object doesn't exist, treat as success.
         try
         {
-            await blobStorage.DeleteAsync(key, cancellationToken);
+            await blobStorage.DeleteObject(key, cancellationToken);
         }
         catch
         {

@@ -2,7 +2,7 @@ using System.Reflection;
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using FluentStorage;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -112,17 +112,15 @@ public class Program
             .Validate(o => !string.IsNullOrWhiteSpace(o.Region), "Storage:Region is required")
             .ValidateOnStart();
 
-        builder.Services.AddSingleton<IBlobStorage>(sp =>
+        builder.Services.AddSingleton<IStore>(sp =>
         {
-            StorageFactory.Modules.UseAwsStorage();
-
             var options = sp.GetRequiredService<IOptions<StorageOptions>>().Value;
             if (!options.Provider.Equals("S3", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"Unsupported storage provider '{options.Provider}'.");
             if (string.IsNullOrWhiteSpace(options.Endpoint))
                 throw new InvalidOperationException("Storage:Endpoint is required for S3.");
 
-            return StorageFactory.Blobs.AwsS3(
+            return AwsS3Storage.FromCredentials(
                 options.AccessKeyId,
                 options.SecretAccessKey,
                 null,

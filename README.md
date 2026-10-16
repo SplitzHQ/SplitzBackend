@@ -18,8 +18,6 @@ SplitzBackend is an ASP.NET Core 10 Web API for SplitZ, an expense splitting and
 - SQLite, created automatically in development
 - S3-compatible object storage configuration for image upload flows
 
-The project has been validated locally with .NET SDK `10.0.109`.
-
 ## Configuration
 
 The default SQLite connection is defined in [appsettings.json](appsettings.json):
@@ -137,9 +135,10 @@ Preferences are rows in `NotificationPreferences`: a row without `GroupId` is th
 ```powershell
 dotnet build
 dotnet format SplitzBackend.sln --verify-no-changes
+dotnet test SplitzBackend.sln
 ```
 
-There is currently no backend test project. If tests are added, use the normal `dotnet test` workflow and keep test projects under a dedicated `tests/` folder.
+Backend tests are in [SplitzBackend.Tests](SplitzBackend.Tests).
 
 ## Database Migrations
 
