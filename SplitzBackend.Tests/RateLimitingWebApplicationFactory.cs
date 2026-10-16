@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using SplitzBackend.Models;
 using SplitzBackend.Services;
+using SplitzBackend.Services.Recognition;
 
 namespace SplitzBackend.Tests;
 
@@ -62,6 +63,12 @@ public sealed class RateLimitingWebApplicationFactory : WebApplicationFactory<Pr
                 provider.GetRequiredService<BlockingImageStorageService>());
             services.RemoveAll<IObjectStorage>();
             services.AddSingleton<IObjectStorage, PassThroughObjectStorage>();
+            services.RemoveAll<IImageProcessingService>();
+            services.AddSingleton<IImageProcessingService, PassThroughImageProcessingService>();
+            services.RemoveAll<IVisionModelClient>();
+            services.AddSingleton<FakeReceiptRecognitionClient>();
+            services.AddSingleton<IVisionModelClient>(provider =>
+                provider.GetRequiredService<FakeReceiptRecognitionClient>());
             services.RemoveAll<ILogger<Services.RateLimiting.RateLimitRejectionWriter>>();
             services.AddSingleton<ILogger<Services.RateLimiting.RateLimitRejectionWriter>>(Logs);
         });
@@ -190,6 +197,59 @@ internal sealed class PassThroughObjectStorage : IObjectStorage
         return false;
     }
 }
+
+/// <summary>Image processing stand-in: the upload bytes pass through unchanged as a fake webp.</summary>
+internal sealed class PassThroughImageProcessingService : IImageProcessingService
+{
+    public async Task<ProcessedImage> ProcessAsync(Stream input, Stream output, ImageResizeRequest resize,
+        CancellationToken cancellationToken)
+    {
+        await input.CopyToAsync(output, cancellationToken);
+        output.Position = 0;
+        return new ProcessedImage(output, "image/webp", ".webp");
+    }
+}
+
+/// <summary>Scripted model: returns the queued reply or throws the queued failure, recording every call.</summary>
+internal sealed class FakeReceiptRecognitionClient : IVisionModelClient
+{
+    private readonly System.Collections.Concurrent.ConcurrentQueue<Func<string>> replies = new();
+
+    public List<RecordedRecognitionCall> Calls { get; } = new();
+
+    public void EnqueueReply(string reply)
+    {
+        replies.Enqueue(() => reply);
+    }
+
+    public void EnqueueFailure(string message)
+    {
+        replies.Enqueue(() => throw new VisionModelRequestException(message));
+    }
+
+    public Task<string> SendRequestAsync(
+        ReceiptRecognitionProvider provider,
+        string systemPrompt,
+        string userPrompt,
+        IReadOnlyList<RecognitionImage> images,
+        CancellationToken cancellationToken)
+    {
+        lock (Calls)
+        {
+            Calls.Add(new RecordedRecognitionCall(provider, systemPrompt, userPrompt, images.ToList()));
+        }
+
+        if (!replies.TryDequeue(out var next))
+            throw new InvalidOperationException("No reply was queued for the fake recognition client.");
+        return Task.FromResult(next());
+    }
+}
+
+internal sealed record RecordedRecognitionCall(
+    ReceiptRecognitionProvider Provider,
+    string SystemPrompt,
+    string UserPrompt,
+    List<RecognitionImage> Images);
 
 internal sealed class RecordingIdentityEmailSender : IEmailSender<SplitzUser>
 {

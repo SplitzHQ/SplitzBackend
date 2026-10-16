@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
 using SplitzBackend.Services;
 using SplitzBackend.Services.RateLimiting;
+using SplitzBackend.Services.Recognition;
 
 namespace SplitzBackend.Controllers;
 
@@ -76,9 +77,14 @@ public class TransactionController(
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
             return BadRequest("Balance user not in group");
 
+        var recognition = await FindLinkableRecognitionAsync(transactionInputDto.ReceiptRecognitionId, user);
+        if (transactionInputDto.ReceiptRecognitionId is not null && recognition is null)
+            return BadRequest("Receipt recognition not found");
+
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
         context.Transactions.Add(transaction);
+        LinkRecognition(transaction, recognition);
         await context.SaveChangesAsync();
 
         ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency);
@@ -95,6 +101,46 @@ public class TransactionController(
 
         return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId },
             mapper.Map<TransactionDto>(transaction));
+    }
+
+    /// <summary>
+    ///     Loads the recognition named in the input when it belongs to the caller and is not yet linked
+    ///     to another expense. Returns null when no id was given or the id cannot be used.
+    /// </summary>
+    private async Task<ReceiptRecognition?> FindLinkableRecognitionAsync(Guid? recognitionId, SplitzUser user,
+        Guid? currentTransactionId = null)
+    {
+        if (recognitionId is null)
+            return null;
+
+        return await context.ReceiptRecognitions.FirstOrDefaultAsync(r =>
+            r.ReceiptRecognitionId == recognitionId && r.UserId == user.Id &&
+            (r.TransactionId == null || r.TransactionId == currentTransactionId));
+    }
+
+    /// <summary>
+    ///     Points the recognition at the expense and uses its first image as the photo when the expense
+    ///     has none. Does not save.
+    /// </summary>
+    private static void LinkRecognition(Transaction transaction, ReceiptRecognition? recognition)
+    {
+        if (recognition is null)
+            return;
+
+        recognition.Transaction = transaction;
+        if (transaction.Photo is null && recognition.ImageKeys.Count > 0)
+            transaction.Photo = recognition.ImageKeys[0];
+    }
+
+    /// <summary>
+    ///     Recognition images belong to the recognition row, so a transaction that shows one must not
+    ///     delete it when the photo is replaced or the transaction is removed.
+    /// </summary>
+    private Task DeletePhotoIfOwnedAsync(string? photo, CancellationToken cancellationToken)
+    {
+        return ReceiptRecognitionImageKeys.IsRecognitionImage(photo)
+            ? Task.CompletedTask
+            : imageStorage.DeleteIfOwnedAsync(photo, cancellationToken);
     }
 
     /// <summary>
@@ -180,7 +226,7 @@ public class TransactionController(
 
         transaction.Photo = result.ObjectKey;
         await context.SaveChangesAsync(cancellationToken);
-        await imageStorage.DeleteIfOwnedAsync(existingPhoto, cancellationToken);
+        await DeletePhotoIfOwnedAsync(existingPhoto, cancellationToken);
         return Ok(result);
     }
 
@@ -226,6 +272,11 @@ public class TransactionController(
         if (transactionMemberIds.Any(id => !targetMemberIds.Contains(id)))
             return BadRequest("Balance user not in group");
 
+        var recognition = await FindLinkableRecognitionAsync(transactionInputDto.ReceiptRecognitionId, user,
+            transactionId);
+        if (transactionInputDto.ReceiptRecognitionId is not null && recognition is null)
+            return BadRequest("Receipt recognition not found");
+
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
         // Revert previous balance changes
@@ -243,6 +294,7 @@ public class TransactionController(
         // Restore non-input fields that SetValues would have nulled out
         existingTransaction.InvoiceId = preservedInvoiceId;
         existingTransaction.Photo = preservedPhoto;
+        LinkRecognition(existingTransaction, recognition);
         await context.SaveChangesAsync();
 
         // Apply new balance changes (existingTransaction now has updated balances)
@@ -311,7 +363,7 @@ public class TransactionController(
 
         await dbTransaction.CommitAsync(cancellationToken);
 
-        await imageStorage.DeleteIfOwnedAsync(receipt, cancellationToken);
+        await DeletePhotoIfOwnedAsync(receipt, cancellationToken);
 
         return NoContent();
     }

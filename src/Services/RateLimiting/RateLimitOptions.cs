@@ -22,6 +22,13 @@ public sealed class RateLimitOptions
     public EndpointRateLimitOptions EmailConfirmation { get; set; } = EndpointRateLimitOptions.Create(20, 10, 900, 15);
     public EndpointRateLimitOptions PasswordReset { get; set; } = EndpointRateLimitOptions.Create(20, 10, 900, 15);
     public UploadRateLimitOptions Upload { get; set; } = new();
+
+    /// <summary>
+    /// Receipt recognition calls a paid model and can take a minute each, so the per-user window is
+    /// far smaller than the upload window. These requests do not take an upload concurrency permit.
+    /// </summary>
+    public SlidingWindowRateLimitOptions ReceiptRecognitionPerUser { get; set; } =
+        SlidingWindowRateLimitOptions.Create(30, 3600, 12);
 }
 
 /// <summary>Limits for one anonymous account workflow: a per-IP window and a per-account (email or user id) window.</summary>
@@ -104,6 +111,7 @@ public sealed class RateLimitOptionsValidator(string environmentName) : IValidat
         ValidatePolicy(options.PasswordReset.Ip, "RateLimiting:PasswordReset:Ip", failures);
         ValidatePolicy(options.PasswordReset.Account, "RateLimiting:PasswordReset:Account", failures);
         ValidatePolicy(options.Upload.HourlyPerUser, "RateLimiting:Upload:HourlyPerUser", failures);
+        ValidatePolicy(options.ReceiptRecognitionPerUser, "RateLimiting:ReceiptRecognitionPerUser", failures);
 
         if (options.Upload.GlobalConcurrencyPermitLimit <= 0)
             failures.Add("RateLimiting:Upload:GlobalConcurrencyPermitLimit must be greater than zero.");
