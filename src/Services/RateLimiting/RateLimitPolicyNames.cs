@@ -7,6 +7,7 @@ public static class RateLimitPolicyNames
     public const string EmailDeliveryIp = "email-delivery-ip";
     public const string LoginIp = "login-ip";
     public const string PasswordResetIp = "password-reset-ip";
+    public const string ReceiptRecognitionPerUser = "receipt-recognition-per-user";
     public const string RegistrationIp = "registration-ip";
     public const string UploadPerUser = "upload-per-user";
 }
@@ -18,6 +19,7 @@ public static class RateLimitCategories
     public const string EmailDelivery = "email-delivery";
     public const string Login = "login";
     public const string PasswordReset = "password-reset";
+    public const string ReceiptRecognition = "receipt-recognition";
     public const string Registration = "registration";
     public const string Upload = "upload";
 }

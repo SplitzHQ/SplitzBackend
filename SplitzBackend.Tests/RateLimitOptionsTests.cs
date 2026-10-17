@@ -26,6 +26,7 @@ public class RateLimitOptionsTests
         AssertPolicy(options.PasswordReset.Account, 10, 900, 15);
 
         AssertPolicy(options.Upload.HourlyPerUser, 200, 3600, 12);
+        AssertPolicy(options.ReceiptRecognitionPerUser, 30, 3600, 12);
         Assert.Equal(5, options.Upload.GlobalConcurrencyPermitLimit);
         Assert.Equal(5, options.Upload.ConcurrencyRetryAfterSeconds);
     }

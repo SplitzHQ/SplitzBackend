@@ -139,7 +139,8 @@ public sealed class S3ObjectStorage(IBlobStorage blobStorage, IOptions<StorageOp
         if (storedUrlOrKey.StartsWith("users/", StringComparison.OrdinalIgnoreCase) ||
             storedUrlOrKey.StartsWith("groups/", StringComparison.OrdinalIgnoreCase) ||
             storedUrlOrKey.StartsWith("transactions/", StringComparison.OrdinalIgnoreCase) ||
-            storedUrlOrKey.StartsWith("drafts/", StringComparison.OrdinalIgnoreCase))
+            storedUrlOrKey.StartsWith("drafts/", StringComparison.OrdinalIgnoreCase) ||
+            storedUrlOrKey.StartsWith("receipts/", StringComparison.OrdinalIgnoreCase))
         {
             objectKey = storedUrlOrKey;
             return true;

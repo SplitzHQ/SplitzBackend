@@ -14,6 +14,7 @@ using SplitzBackend.Models;
 using SplitzBackend.OpenAPIGen.Filter;
 using SplitzBackend.Services;
 using SplitzBackend.Services.RateLimiting;
+using SplitzBackend.Services.Recognition;
 
 namespace SplitzBackend;
 
@@ -174,6 +175,20 @@ public class Program
         builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
         builder.Services.AddScoped<IInvoiceDebtService, InvoiceDebtService>();
         builder.Services.AddScoped<INotificationService, NotificationService>();
+
+        // configure receipt recognition (OpenAI-compatible vision model; server provider plus per-user overrides)
+        builder.Services.AddSingleton<IValidateOptions<ReceiptRecognitionOptions>, ReceiptRecognitionOptionsValidator>();
+        builder.Services.AddOptions<ReceiptRecognitionOptions>()
+            .Bind(builder.Configuration.GetSection(ReceiptRecognitionOptions.SectionName))
+            .ValidateOnStart();
+        builder.Services.AddHttpClient(OpenAiClient.HttpClientName, client =>
+        {
+            // The per-call timeout is enforced by the client itself; keep the handler timeout out of the way.
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        });
+        builder.Services.AddSingleton<IVisionModelClient, OpenAiClient>();
+        builder.Services.AddScoped<IReceiptRecognitionSettingsService, ReceiptRecognitionSettingsService>();
+        builder.Services.AddScoped<IReceiptRecognitionService, ReceiptRecognitionService>();
 
         var app = builder.Build();
 

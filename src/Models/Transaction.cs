@@ -62,4 +62,6 @@ public class TransactionDto : TransactionBase
 public class TransactionInputDto : TransactionBase
 {
     public List<TransactionBalanceInputDto> Balances { get; set; } = new();
+
+    public Guid? ReceiptRecognitionId { get; set; }
 }

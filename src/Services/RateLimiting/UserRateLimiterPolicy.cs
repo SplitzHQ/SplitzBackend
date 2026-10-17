@@ -5,8 +5,14 @@ using Microsoft.Extensions.Options;
 
 namespace SplitzBackend.Services.RateLimiting;
 
-/// <summary>Hourly sliding window per authenticated user for image uploads.</summary>
-internal sealed class UploadPerUserRateLimiterPolicy : IRateLimiterPolicy<string>
+/// <summary>
+/// Sliding window keyed by the authenticated user id. <paramref name="selectWindow"/> picks which
+/// <see cref="RateLimitOptions" /> window applies, so one class serves every per-user workflow.
+/// Unauthenticated requests will not be counted here.
+/// </summary>
+internal sealed class UserRateLimiterPolicy(
+    string category,
+    Func<RateLimitOptions, SlidingWindowRateLimitOptions> selectWindow) : IRateLimiterPolicy<string>
 {
     public Func<OnRejectedContext, CancellationToken, ValueTask> OnRejected => WriteRejectionAsync;
 
@@ -22,15 +28,15 @@ internal sealed class UploadPerUserRateLimiterPolicy : IRateLimiterPolicy<string
 
         return RateLimitPartition.GetSlidingWindowLimiter(
             userId,
-            _ => rateLimitOptions.Upload.HourlyPerUser.ToLimiterOptions());
+            _ => selectWindow(rateLimitOptions).ToLimiterOptions());
     }
 
-    private static ValueTask WriteRejectionAsync(OnRejectedContext rejectionContext, CancellationToken cancellationToken)
+    private ValueTask WriteRejectionAsync(OnRejectedContext rejectionContext, CancellationToken cancellationToken)
     {
         return rejectionContext.HttpContext.RequestServices.GetRequiredService<RateLimitRejectionWriter>().WriteAsync(
             rejectionContext.HttpContext,
             rejectionContext.Lease,
-            RateLimitCategories.Upload,
+            category,
             RateLimitPartitionTypes.User,
             cancellationToken: cancellationToken);
     }
