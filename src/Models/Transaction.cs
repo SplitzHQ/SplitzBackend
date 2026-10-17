@@ -63,9 +63,5 @@ public class TransactionInputDto : TransactionBase
 {
     public List<TransactionBalanceInputDto> Balances { get; set; } = new();
 
-    /// <summary>
-    ///     A receipt recognition owned by the caller that this expense was prefilled from. The recognition
-    ///     is linked to the saved expense and its first image becomes the photo when none is set.
-    /// </summary>
     public Guid? ReceiptRecognitionId { get; set; }
 }

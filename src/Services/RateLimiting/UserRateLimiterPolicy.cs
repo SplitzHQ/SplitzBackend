@@ -7,8 +7,8 @@ namespace SplitzBackend.Services.RateLimiting;
 
 /// <summary>
 /// Sliding window keyed by the authenticated user id. <paramref name="selectWindow"/> picks which
-/// <c>RateLimitOptions</c> window applies, so one class serves every per-user workflow.
-/// Unauthenticated requests are not limited here; authorization rejects them first.
+/// <see cref="RateLimitOptions" /> window applies, so one class serves every per-user workflow.
+/// Unauthenticated requests will not be counted here.
 /// </summary>
 internal sealed class UserRateLimiterPolicy(
     string category,

@@ -20,9 +20,7 @@ public enum ReceiptRecognitionStatus
 }
 
 /// <summary>
-///     One receipt recognition request: the images the user uploaded, which provider answered,
-///     the raw reply and the fields read from it. Rows are kept even when the request failed so
-///     the images and the reply can be inspected later.
+/// Represents a single receipt.
 /// </summary>
 [Index(nameof(UserId), nameof(CreateTime))]
 public class ReceiptRecognition

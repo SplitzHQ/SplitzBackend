@@ -25,7 +25,7 @@ public sealed class RateLimitOptions
 
     /// <summary>
     /// Receipt recognition calls a paid model and can take a minute each, so the per-user window is
-    /// far smaller than the upload window. These requests do not take an upload concurrency permit.
+    /// far smaller than the upload window.
     /// </summary>
     public SlidingWindowRateLimitOptions ReceiptRecognitionPerUser { get; set; } =
         SlidingWindowRateLimitOptions.Create(30, 3600, 12);
@@ -67,7 +67,10 @@ public sealed class SlidingWindowRateLimitOptions
         };
     }
 
-    /// <summary>Requests are never queued: a request over the limit is rejected immediately.</summary>
+    /// <summary>
+    /// Create a <see cref="SlidingWindowRateLimiterOptions"/> instance for use with a sliding window rate limiter.
+    /// Requests are never queued: a request over the limit is rejected immediately.
+    /// </summary>
     public SlidingWindowRateLimiterOptions ToLimiterOptions()
     {
         return new SlidingWindowRateLimiterOptions
