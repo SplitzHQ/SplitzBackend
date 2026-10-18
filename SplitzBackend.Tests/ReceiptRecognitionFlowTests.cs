@@ -167,12 +167,10 @@ public class ReceiptRecognitionFlowTests
         var foreign = await SendAsync(client, stranger, HttpMethod.Get, $"/receipt/{receiptId}");
         Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
 
-        // Saving the expense links the receipt and uses its first image as the photo.
         var create = await SendAsync(client, user, HttpMethod.Post, "/transaction",
             JsonSerializer.Serialize(TransactionBody(groupId, user.UserId, receiptId)));
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         var transaction = await ReadAsync<JsonElement>(create);
-        Assert.Equal(images[0], transaction.GetProperty("photo").GetString());
         var transactionId = transaction.GetProperty("transactionId").GetGuid();
 
         var linked = await ReadAsync<JsonElement>(

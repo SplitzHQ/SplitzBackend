@@ -116,9 +116,10 @@ Main API areas:
 
 - `/account`: profile, friend requests (send, accept, ignore, cancel), friend management, avatar upload, and Identity auth endpoints
 - `/group`: group list/detail, member invites (send, accept, ignore), join links, group avatar, group transactions, and group invoices
-- `/transaction`: transaction detail/create/update/delete and receipt upload; `receiptRecognitionId` on create or update links a recognition and uses its first image as the photo
+- `/transaction`: transaction detail/create/update/delete and receipt upload
 - `/transactiondraft`: draft detail/create/update/delete and receipt upload
-- `/receiptrecognition`: recognize an expense from one or more receipt images (images and the raw model reply are stored), fetch a past recognition, and manage the user's own model provider
+- `/receipt`: recognize an expense from one or more receipt images, fetch a saved receipt, and check recognition availability.
+- `/llmsettings`: manage the user's model provider
 - `/invoice`: invoice list/detail/create/update/delete and settlement records
 - `/notification`: notification list (filterable by category), unread summary, read/dismiss actions, the type catalog, and per-user preferences (global or per group)
 

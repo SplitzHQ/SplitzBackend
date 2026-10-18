@@ -19,7 +19,7 @@ public class RateLimitOpenApiTests
         ("/account/resendConfirmationEmail", HttpMethod.Post),
         ("/account/resetPassword", HttpMethod.Post),
         ("/group/{groupId}/avatar", HttpMethod.Post),
-        ("/receiptrecognition", HttpMethod.Post),
+        ("/receipt", HttpMethod.Post),
         ("/transaction/{id}/receipt", HttpMethod.Post),
         ("/transactiondraft/{id}/receipt", HttpMethod.Post)
     ];

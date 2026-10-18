@@ -64,8 +64,8 @@ public class RateLimitingEndpointMetadataTests
         // Recognition holds a request open for the whole model call, so it has its own per-user window
         // and stays out of the shared upload concurrency pool.
         AssertEndpoint(
-                protectedEndpoints["/receiptrecognition"],
-                "ReceiptRecognition",
+                protectedEndpoints["/receipt"],
+                "Receipt",
                 RateLimitPolicyNames.ReceiptRecognitionPerUser);
 
         var uploadEndpoints = endpoints
