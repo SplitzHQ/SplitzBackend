@@ -27,7 +27,7 @@ public class SplitzDbContext(DbContextOptions<SplitzDbContext> options) : Identi
 
     public DbSet<ReceiptRecognition> ReceiptRecognitions { get; set; } = null!;
 
-    public DbSet<ReceiptRecognitionSettings> ReceiptRecognitionSettings { get; set; } = null!;
+    public DbSet<LLMSettings> LLMSettings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

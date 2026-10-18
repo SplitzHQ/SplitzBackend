@@ -1,3 +1,5 @@
+using SplitzBackend.Services.LLM;
+
 namespace SplitzBackend.Services.Recognition;
 
 /// <summary>One image sent to the model, already resized and re-encoded.</summary>
@@ -12,7 +14,7 @@ public interface IVisionModelClient
     ///     or returns a reply the client cannot read.
     /// </summary>
     Task<string> SendRequestAsync(
-        ReceiptRecognitionProvider provider,
+        LLMProvider provider,
         string systemPrompt,
         string userPrompt,
         IReadOnlyList<RecognitionImage> images,

@@ -5,12 +5,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SplitzBackend.Services.Recognition;
 using Xunit;
+using SplitzBackend.Services.LLM;
 
 namespace SplitzBackend.Tests;
 
 public class OpenAiClientTests
 {
-    private static readonly ReceiptRecognitionProvider Provider =
+    private static readonly LLMProvider Provider =
         new("https://llm.example.com/v1", "vision-model", "secret-key", true);
 
     [Fact]
@@ -109,7 +110,7 @@ public class OpenAiClientTests
     {
         return new OpenAiClient(
             new SingleClientFactory(handler),
-            Options.Create(new ReceiptRecognitionOptions { TimeoutSeconds = timeoutSeconds }),
+            Options.Create(new LLMOptions { TimeoutSeconds = timeoutSeconds }),
             NullLogger<OpenAiClient>.Instance);
     }
 

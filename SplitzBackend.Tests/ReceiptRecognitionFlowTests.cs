@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SplitzBackend.Models;
@@ -30,7 +31,7 @@ public class ReceiptRecognitionFlowTests
         using var client = factory.CreateClient();
 
         var settings = await ReadAsync<JsonElement>(
-            await SendAsync(client, user, HttpMethod.Get, "/receiptrecognition/settings"));
+            await SendAsync(client, user, HttpMethod.Get, "/llmsettings"));
         Assert.False(settings.GetProperty("serverProviderAvailable").GetBoolean());
         Assert.True(settings.GetProperty("customProviderAllowed").GetBoolean());
         Assert.False(settings.GetProperty("customProviderEnabled").GetBoolean());
@@ -49,17 +50,17 @@ public class ReceiptRecognitionFlowTests
         var user = await CreateUserAndLoginAsync(factory, "rr-settings@example.com");
         using var client = factory.CreateClient();
 
-        var missingKey = await SendAsync(client, user, HttpMethod.Put, "/receiptrecognition/settings",
+        var missingKey = await SendAsync(client, user, HttpMethod.Put, "/llmsettings",
             JsonSerializer.Serialize(new { enabled = true, endpoint = "https://llm.example.com/v1", model = "m" }));
         Assert.Equal(HttpStatusCode.BadRequest, missingKey.StatusCode);
         Assert.Contains("API key", await missingKey.Content.ReadAsStringAsync());
 
-        var badEndpoint = await SendAsync(client, user, HttpMethod.Put, "/receiptrecognition/settings",
+        var badEndpoint = await SendAsync(client, user, HttpMethod.Put, "/llmsettings",
             JsonSerializer.Serialize(new { enabled = true, endpoint = "ftp://x", model = "m", apiKey = "k" }));
         Assert.Equal(HttpStatusCode.BadRequest, badEndpoint.StatusCode);
 
         var saved = await ReadAsync<JsonElement>(await SendAsync(client, user, HttpMethod.Put,
-            "/receiptrecognition/settings",
+            "/llmsettings",
             JsonSerializer.Serialize(new
             {
                 enabled = true,
@@ -76,24 +77,47 @@ public class ReceiptRecognitionFlowTests
 
         // Saving again without a key keeps the stored one; the database never holds it in clear text.
         var kept = await ReadAsync<JsonElement>(await SendAsync(client, user, HttpMethod.Put,
-            "/receiptrecognition/settings",
+            "/llmsettings",
             JsonSerializer.Serialize(new { enabled = true, endpoint = "https://llm.example.com/v1", model = "vision-2" })));
         Assert.True(kept.GetProperty("hasApiKey").GetBoolean());
         Assert.Equal("vision-2", kept.GetProperty("model").GetString());
         await using (var scope = factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SplitzDbContext>();
-            var row = await db.ReceiptRecognitionSettings.SingleAsync(s => s.UserId == user.UserId);
+            var row = await db.LLMSettings.SingleAsync(s => s.UserId == user.UserId);
             Assert.NotNull(row.ProtectedApiKey);
             Assert.DoesNotContain("sk-secret", row.ProtectedApiKey);
         }
 
-        var cleared = await SendAsync(client, user, HttpMethod.Delete, "/receiptrecognition/settings");
+        var cleared = await SendAsync(client, user, HttpMethod.Delete, "/llmsettings");
         Assert.Equal(HttpStatusCode.NoContent, cleared.StatusCode);
         var after = await ReadAsync<JsonElement>(
-            await SendAsync(client, user, HttpMethod.Get, "/receiptrecognition/settings"));
+            await SendAsync(client, user, HttpMethod.Get, "/llmsettings"));
         Assert.False(after.GetProperty("hasApiKey").GetBoolean());
         Assert.False(after.GetProperty("available").GetBoolean());
+    }
+
+    /// <summary>Checks that shared server policy blocks custom providers and keeps receipt limits separate.</summary>
+    [Fact]
+    public async Task SharedPolicyDisablesCustomProviders()
+    {
+        using var factory = new RateLimitingWebApplicationFactory(new Dictionary<string, string?>
+        {
+            ["LLM:AllowCustomProvider"] = "false"
+        });
+        var user = await CreateUserAndLoginAsync(factory, "llm-policy@example.com");
+        using var client = factory.CreateClient();
+        var settings = await ReadAsync<JsonElement>(
+            await SendAsync(client, user, HttpMethod.Get, "/llmsettings"));
+        Assert.False(settings.GetProperty("customProviderAllowed").GetBoolean());
+        var update = await SendAsync(client, user, HttpMethod.Put, "/llmsettings",
+            JsonSerializer.Serialize(new { enabled = false }));
+        Assert.Equal(HttpStatusCode.BadRequest, update.StatusCode);
+        var capabilities = await ReadAsync<JsonElement>(
+            await SendAsync(client, user, HttpMethod.Get, "/receiptrecognition/capabilities"));
+        Assert.False(capabilities.GetProperty("available").GetBoolean());
+        Assert.False(capabilities.GetProperty("customProviderAllowed").GetBoolean());
+        Assert.Equal(6, capabilities.GetProperty("maxImages").GetInt32());
     }
 
     [Fact]
@@ -196,10 +220,10 @@ public class ReceiptRecognitionFlowTests
     {
         using var factory = new RateLimitingWebApplicationFactory(new Dictionary<string, string?>
         {
-            ["ReceiptRecognition:Enabled"] = "true",
-            ["ReceiptRecognition:Endpoint"] = "https://server-llm.example.com/v1",
-            ["ReceiptRecognition:Model"] = "server-vision",
-            ["ReceiptRecognition:ApiKey"] = "server-key",
+            ["LLM:Enabled"] = "true",
+            ["LLM:Endpoint"] = "https://server-llm.example.com/v1",
+            ["LLM:Model"] = "server-vision",
+            ["LLM:ApiKey"] = "server-key",
             ["ReceiptRecognition:MaxImages"] = "2"
         });
         var user = await CreateUserAndLoginAsync(factory, "rr-server@example.com");
@@ -207,10 +231,14 @@ public class ReceiptRecognitionFlowTests
         using var client = factory.CreateClient();
 
         var settings = await ReadAsync<JsonElement>(
-            await SendAsync(client, user, HttpMethod.Get, "/receiptrecognition/settings"));
+            await SendAsync(client, user, HttpMethod.Get, "/llmsettings"));
         Assert.True(settings.GetProperty("serverProviderAvailable").GetBoolean());
         Assert.True(settings.GetProperty("available").GetBoolean());
-        Assert.Equal(2, settings.GetProperty("maxImages").GetInt32());
+        Assert.False(settings.TryGetProperty("maxImages", out _));
+        var capabilities = await ReadAsync<JsonElement>(
+            await SendAsync(client, user, HttpMethod.Get, "/receiptrecognition/capabilities"));
+        Assert.True(capabilities.GetProperty("available").GetBoolean());
+        Assert.Equal(2, capabilities.GetProperty("maxImages").GetInt32());
 
         var tooMany = await PostRecognitionAsync(client, user, 3);
         Assert.Equal(HttpStatusCode.BadRequest, tooMany.StatusCode);
@@ -265,7 +293,7 @@ public class ReceiptRecognitionFlowTests
 
     private static async Task ConfigureCustomProviderAsync(HttpClient client, TestUser user)
     {
-        var response = await SendAsync(client, user, HttpMethod.Put, "/receiptrecognition/settings",
+        var response = await SendAsync(client, user, HttpMethod.Put, "/llmsettings",
             JsonSerializer.Serialize(new
             {
                 enabled = true,

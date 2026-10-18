@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,6 +11,28 @@ namespace SplitzBackend.src.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "LLMSettings",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "TEXT", nullable: false),
+                    Enabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Endpoint = table.Column<string>(type: "TEXT", maxLength: 2048, nullable: true),
+                    Model = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    ProtectedApiKey = table.Column<string>(type: "TEXT", nullable: true),
+                    UpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LLMSettings", x => x.UserId);
+                    table.ForeignKey(
+                        name: "FK_LLMSettings_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateTable(
                 name: "ReceiptRecognitions",
                 columns: table => new
@@ -52,28 +74,6 @@ namespace SplitzBackend.src.Migrations
                         onDelete: ReferentialAction.SetNull);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "ReceiptRecognitionSettings",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    Enabled = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Endpoint = table.Column<string>(type: "TEXT", maxLength: 2048, nullable: true),
-                    Model = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    ProtectedApiKey = table.Column<string>(type: "TEXT", nullable: true),
-                    UpdateTime = table.Column<DateTime>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ReceiptRecognitionSettings", x => x.UserId);
-                    table.ForeignKey(
-                        name: "FK_ReceiptRecognitionSettings_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_ReceiptRecognitions_TransactionId",
                 table: "ReceiptRecognitions",
@@ -89,10 +89,10 @@ namespace SplitzBackend.src.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ReceiptRecognitions");
+                name: "LLMSettings");
 
             migrationBuilder.DropTable(
-                name: "ReceiptRecognitionSettings");
+                name: "ReceiptRecognitions");
         }
     }
 }

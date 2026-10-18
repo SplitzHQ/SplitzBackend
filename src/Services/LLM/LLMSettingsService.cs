@@ -4,17 +4,19 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SplitzBackend.Models;
 
-namespace SplitzBackend.Services.Recognition;
+namespace SplitzBackend.Services.LLM;
 
 /// <summary>Result of saving settings: either the new settings or one message describing what was wrong.</summary>
-public sealed record ReceiptRecognitionSettingsUpdate(ReceiptRecognitionSettingsDto? Settings, string? Error);
+public sealed record LLMSettingsUpdateResult(LLMSettingsDto? Settings, string? Error);
 
 /// <summary>Reads and writes a user's custom provider and decides which provider a request should use.</summary>
-public interface IReceiptRecognitionSettingsService
+public interface ILLMSettingsService
 {
-    Task<ReceiptRecognitionSettingsDto> GetAsync(string userId, CancellationToken cancellationToken);
+    /// <summary>Gets the user's provider settings without the API key.</summary>
+    Task<LLMSettingsDto> GetAsync(string userId, CancellationToken cancellationToken);
 
-    Task<ReceiptRecognitionSettingsUpdate> UpdateAsync(string userId, ReceiptRecognitionSettingsInputDto input,
+    /// <summary>Validates and saves provider settings, keeping the stored key when no new key is given.</summary>
+    Task<LLMSettingsUpdateResult> UpdateAsync(string userId, LLMSettingsInputDto input,
         CancellationToken cancellationToken);
 
     /// <summary>Removes the custom provider, including the stored key.</summary>
@@ -24,37 +26,40 @@ public interface IReceiptRecognitionSettingsService
     ///     The user's custom provider when it is enabled, allowed and complete; otherwise the server
     ///     provider; otherwise null.
     /// </summary>
-    Task<ReceiptRecognitionProvider?> ResolveProviderAsync(string userId, CancellationToken cancellationToken);
+    Task<LLMProvider?> ResolveProviderAsync(string userId, CancellationToken cancellationToken);
 }
 
-public sealed class ReceiptRecognitionSettingsService(
+/// <summary>Stores user providers and selects a provider for AI requests.</summary>
+public sealed class LLMSettingsService(
     SplitzDbContext context,
     IDataProtectionProvider dataProtectionProvider,
-    IOptions<ReceiptRecognitionOptions> options,
-    ILogger<ReceiptRecognitionSettingsService> logger) : IReceiptRecognitionSettingsService
+    IOptions<LLMOptions> options,
+    ILogger<LLMSettingsService> logger) : ILLMSettingsService
 {
     /// <summary>Changing this string makes every stored key unreadable, so treat it as part of the schema.</summary>
     private const string ProtectorPurpose = "SplitzBackend.ReceiptRecognition.ApiKey.v1";
 
     private readonly IDataProtector protector = dataProtectionProvider.CreateProtector(ProtectorPurpose);
 
-    public async Task<ReceiptRecognitionSettingsDto> GetAsync(string userId, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public async Task<LLMSettingsDto> GetAsync(string userId, CancellationToken cancellationToken)
     {
-        var settings = await context.ReceiptRecognitionSettings
+        var settings = await context.LLMSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
-        return ToDto(settings);
+        return ToLLMSettingsDto(settings);
     }
 
-    public async Task<ReceiptRecognitionSettingsUpdate> UpdateAsync(string userId,
-        ReceiptRecognitionSettingsInputDto input, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public async Task<LLMSettingsUpdateResult> UpdateAsync(string userId,
+        LLMSettingsInputDto input, CancellationToken cancellationToken)
     {
         if (!options.Value.AllowCustomProvider)
-            return new ReceiptRecognitionSettingsUpdate(null, "Custom providers are turned off on this server.");
+            return new LLMSettingsUpdateResult(null, "Custom providers are turned off on this server.");
 
-        var settings = await context.ReceiptRecognitionSettings
+        var settings = await context.LLMSettings
             .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
-        settings ??= context.ReceiptRecognitionSettings.Add(new ReceiptRecognitionSettings
+        settings ??= context.LLMSettings.Add(new LLMSettings
         {
             UserId = userId,
             Enabled = false,
@@ -68,12 +73,12 @@ public sealed class ReceiptRecognitionSettingsService(
 
         if (input.Enabled)
         {
-            if (!ReceiptRecognitionProvider.IsValidEndpoint(endpoint))
-                return new ReceiptRecognitionSettingsUpdate(null, "Endpoint must be an absolute http or https URL.");
+            if (!LLMProvider.IsValidEndpoint(endpoint))
+                return new LLMSettingsUpdateResult(null, "Endpoint must be an absolute http or https URL.");
             if (string.IsNullOrEmpty(model))
-                return new ReceiptRecognitionSettingsUpdate(null, "Model is required.");
+                return new LLMSettingsUpdateResult(null, "Model is required.");
             if (!hasKey)
-                return new ReceiptRecognitionSettingsUpdate(null, "API key is required.");
+                return new LLMSettingsUpdateResult(null, "API key is required.");
         }
 
         settings.Enabled = input.Enabled;
@@ -84,49 +89,55 @@ public sealed class ReceiptRecognitionSettingsService(
         settings.UpdateTime = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
-        return new ReceiptRecognitionSettingsUpdate(ToDto(settings), null);
+        return new LLMSettingsUpdateResult(ToLLMSettingsDto(settings), null);
     }
 
+    /// <inheritdoc />
     public async Task ClearAsync(string userId, CancellationToken cancellationToken)
     {
-        await context.ReceiptRecognitionSettings
+        await context.LLMSettings
             .Where(s => s.UserId == userId)
             .ExecuteDeleteAsync(cancellationToken);
     }
 
-    public async Task<ReceiptRecognitionProvider?> ResolveProviderAsync(string userId,
+    /// <inheritdoc />
+    public async Task<LLMProvider?> ResolveProviderAsync(string userId,
         CancellationToken cancellationToken)
     {
         var serverOptions = options.Value;
         if (serverOptions.AllowCustomProvider)
         {
-            var settings = await context.ReceiptRecognitionSettings
+            var settings = await context.LLMSettings
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
             var apiKey = TryUnprotect(settings);
             if (settings is { Enabled: true } &&
-                ReceiptRecognitionProvider.IsValidEndpoint(settings.Endpoint) &&
+                LLMProvider.IsValidEndpoint(settings.Endpoint) &&
                 !string.IsNullOrWhiteSpace(settings.Model) &&
                 apiKey is not null)
-                return new ReceiptRecognitionProvider(settings.Endpoint!, settings.Model, apiKey, true);
+                return new LLMProvider(settings.Endpoint!, settings.Model, apiKey, true);
         }
 
         return serverOptions.IsServerProviderConfigured
-            ? new ReceiptRecognitionProvider(serverOptions.Endpoint, serverOptions.Model, serverOptions.ApiKey, false)
+            ? new LLMProvider(serverOptions.Endpoint, serverOptions.Model, serverOptions.ApiKey, false)
             : null;
     }
 
-    private ReceiptRecognitionSettingsDto ToDto(ReceiptRecognitionSettings? settings)
+    /// <summary>
+    /// Builds the public settings response and checks whether a provider is available.
+    /// Normally it should be done in mapper, but we need to check the provider availability, so we have to do it here.
+    /// </summary>
+    private LLMSettingsDto ToLLMSettingsDto(LLMSettings? settings)
     {
         var serverOptions = options.Value;
         var hasKey = TryUnprotect(settings) is not null;
         var customEnabled = serverOptions.AllowCustomProvider && settings is { Enabled: true };
         var customComplete = customEnabled &&
-                             ReceiptRecognitionProvider.IsValidEndpoint(settings!.Endpoint) &&
+                             LLMProvider.IsValidEndpoint(settings!.Endpoint) &&
                              !string.IsNullOrWhiteSpace(settings.Model) &&
                              hasKey;
 
-        return new ReceiptRecognitionSettingsDto
+        return new LLMSettingsDto
         {
             ServerProviderAvailable = serverOptions.IsServerProviderConfigured,
             CustomProviderAllowed = serverOptions.AllowCustomProvider,
@@ -134,8 +145,7 @@ public sealed class ReceiptRecognitionSettingsService(
             Endpoint = settings?.Endpoint,
             Model = settings?.Model,
             HasApiKey = hasKey,
-            Available = customComplete || serverOptions.IsServerProviderConfigured,
-            MaxImages = serverOptions.MaxImages
+            Available = customComplete || serverOptions.IsServerProviderConfigured
         };
     }
 
@@ -144,7 +154,7 @@ public sealed class ReceiptRecognitionSettingsService(
     ///     container was recreated without a persisted key folder. That is reported as "no key" so the
     ///     user can enter it again instead of seeing every request fail.
     /// </summary>
-    private string? TryUnprotect(ReceiptRecognitionSettings? settings)
+    private string? TryUnprotect(LLMSettings? settings)
     {
         if (settings?.ProtectedApiKey is null)
             return null;
@@ -155,7 +165,7 @@ public sealed class ReceiptRecognitionSettingsService(
         }
         catch (CryptographicException ex)
         {
-            logger.LogWarning(ex, "Stored receipt recognition API key for user {UserId} cannot be read.",
+            logger.LogWarning(ex, "Stored LLM API key for user {UserId} cannot be read.",
                 settings.UserId);
             return null;
         }

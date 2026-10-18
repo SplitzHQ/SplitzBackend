@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
+using SplitzBackend.Services.LLM;
 
 namespace SplitzBackend.Services.Recognition;
 
@@ -13,7 +14,7 @@ namespace SplitzBackend.Services.Recognition;
 /// </summary>
 public sealed class OpenAiClient(
     IHttpClientFactory httpClientFactory,
-    IOptions<ReceiptRecognitionOptions> options,
+    IOptions<LLMOptions> options,
     ILogger<OpenAiClient> logger) : IVisionModelClient
 {
     public const string HttpClientName = "ReceiptRecognition";
@@ -26,7 +27,7 @@ public sealed class OpenAiClient(
     };
 
     public async Task<string> SendRequestAsync(
-        ReceiptRecognitionProvider provider,
+        LLMProvider provider,
         string systemPrompt,
         string userPrompt,
         IReadOnlyList<RecognitionImage> images,

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using SplitzBackend.Models;
+using SplitzBackend.Services.LLM;
 
 namespace SplitzBackend.Services.Recognition;
 
@@ -16,7 +17,7 @@ public interface IReceiptRecognitionService
     /// </summary>
     Task<ReceiptRecognition> RecognizeAsync(
         string userId,
-        ReceiptRecognitionProvider provider,
+        LLMProvider provider,
         IReadOnlyList<ReceiptImageUpload> uploads,
         IReadOnlyCollection<string>? allowedCategories,
         CancellationToken cancellationToken);
@@ -54,7 +55,7 @@ public sealed class ReceiptRecognitionService(
 
     public async Task<ReceiptRecognition> RecognizeAsync(
         string userId,
-        ReceiptRecognitionProvider provider,
+        LLMProvider provider,
         IReadOnlyList<ReceiptImageUpload> uploads,
         IReadOnlyCollection<string>? allowedCategories,
         CancellationToken cancellationToken)

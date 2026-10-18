@@ -43,9 +43,9 @@ Image upload and signed image URL flows require the `Storage` section to be conf
 }
 ```
 
-For local development, prefer user secrets or environment variables for credentials instead of committing real values.
-
 Transactional account email uses the `Email` section. If `Email:Enabled` is false or no API key is configured, registration still succeeds and confirmation email sending is skipped; password recovery should be treated as unavailable by clients. Configure real values through user secrets or environment variables, not committed settings:
+
+When `Email:Enabled` is true, production startup validates that the required provider fields are configured.
 
 ```json
 "Email": {
@@ -60,24 +60,29 @@ Transactional account email uses the `Email` section. If `Email:Enabled` is fals
 }
 ```
 
-When `Email:Enabled` is true, production startup validates that the required provider fields are configured.
+The `LLM` section configures the OpenAI-compatible server provider shared by AI features. Users can read, save and delete their own provider with `GET`, `PUT` and `DELETE /llmsettings`. Set `AllowCustomProvider` to true to allow custom providers provided by users.
 
-Receipt recognition sends receipt photos to an OpenAI-compatible vision model and prefills the new expense from the reply. The `ReceiptRecognition` section configures the server provider; users may also store their own endpoint, model and key under `/receiptrecognition/settings` unless `AllowCustomProvider` is false. Leave `Enabled` false to offer only user-provided models.
+`Endpoint` is the API base URL; `/chat/completions` is appended unless the value already ends with it. User API keys are stored with ASP.NET Core Data Protection, so the data protection key ring must be persisted across deployments (for example by mounting the key folder in a container); if the key ring is lost, users are shown as having no key and must enter it again.
 
 ```json
-"ReceiptRecognition": {
+"LLM": {
   "Enabled": false,
   "Endpoint": "https://api.openai.com/v1",
   "Model": "",
   "ApiKey": "",
   "AllowCustomProvider": true,
-  "MaxImages": 6,
-  "MaxImageSize": 1600,
   "TimeoutSeconds": 90
 }
 ```
 
-`Endpoint` is the API base URL; `/chat/completions` is appended unless the value already ends with it. User API keys are stored with ASP.NET Core Data Protection, so the data protection key ring must be persisted across deployments (for example by mounting the key folder in a container); if the key ring is lost, users are shown as having no key and must enter it again. Each recognition request has its own per-user limit, `RateLimiting:ReceiptRecognitionPerUser` (30 per hour by default).
+Receipt recognition sends photos to the vision model and fills the expense info with the recognized data. `GET /receiptrecognition/capabilities` returns availability, custom provider policy and `maxImages` for the current user. Each recognition request has its own per-user limit, `RateLimiting:ReceiptRecognitionPerUser` (30 per hour by default).
+
+```json
+"ReceiptRecognition": {
+  "MaxImages": 6,
+  "MaxImageSize": 1600
+}
+```
 
 ## Development
 

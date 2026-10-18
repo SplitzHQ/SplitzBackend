@@ -1,14 +1,13 @@
-namespace SplitzBackend.Services.Recognition;
+using SplitzBackend.Services.LLM;
 
-/// <summary>
-///     The OpenAI-compatible API that one recognition request talks to. Either the server-wide provider
-///     from <see cref="ReceiptRecognitionOptions" /> or a user's own settings.
-/// </summary>
+namespace SplitzBackend.Services.LLM;
+
+/// <summary>The server or user provider selected for an AI request.</summary>
 /// <param name="Endpoint">Base URL, for example <c>https://api.openai.com/v1</c>, or a full chat completions URL.</param>
 /// <param name="Model">Model name sent in the request body.</param>
 /// <param name="ApiKey">Bearer token. Never stored on the recognition record or written to logs.</param>
 /// <param name="IsCustom">True when the values came from the user's settings instead of the server.</param>
-public sealed record ReceiptRecognitionProvider(string Endpoint, string Model, string ApiKey, bool IsCustom)
+public sealed record LLMProvider(string Endpoint, string Model, string ApiKey, bool IsCustom)
 {
     private const string ChatCompletionsPath = "/chat/completions";
 

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using SplitzBackend.Models;
 using SplitzBackend.Services;
 using SplitzBackend.Services.Recognition;
+using SplitzBackend.Services.LLM;
 
 namespace SplitzBackend.Tests;
 
@@ -228,7 +229,7 @@ internal sealed class FakeReceiptRecognitionClient : IVisionModelClient
     }
 
     public Task<string> SendRequestAsync(
-        ReceiptRecognitionProvider provider,
+        LLMProvider provider,
         string systemPrompt,
         string userPrompt,
         IReadOnlyList<RecognitionImage> images,
@@ -246,7 +247,7 @@ internal sealed class FakeReceiptRecognitionClient : IVisionModelClient
 }
 
 internal sealed record RecordedRecognitionCall(
-    ReceiptRecognitionProvider Provider,
+    LLMProvider Provider,
     string SystemPrompt,
     string UserPrompt,
     List<RecognitionImage> Images);

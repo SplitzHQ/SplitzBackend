@@ -8,12 +8,12 @@ using Microsoft.Extensions.Options;
 using SplitzBackend.Models;
 using SplitzBackend.Services.RateLimiting;
 using SplitzBackend.Services.Recognition;
+using SplitzBackend.Services.LLM;
 
 namespace SplitzBackend.Controllers;
 
 /// <summary>
-///     Receipt recognition: upload receipt photos, let a vision model read them, and manage the
-///     user's own model provider.
+///     Upload receipt photos and read expense fields with the user's selected vision model.
 /// </summary>
 [Authorize]
 [ApiController]
@@ -23,7 +23,7 @@ public class ReceiptRecognitionController(
     UserManager<SplitzUser> userManager,
     IMapper mapper,
     IReceiptRecognitionService recognition,
-    IReceiptRecognitionSettingsService settings,
+    ILLMSettingsService llmSettings,
     IOptions<ReceiptRecognitionOptions> options) : ControllerBase
 {
     /// <summary>Per-file cap. Matches the receipt upload endpoints.</summary>
@@ -58,7 +58,7 @@ public class ReceiptRecognitionController(
         if (files.Any(f => f.Length > MaxFileBytes))
             return BadRequest("Each image must be 15 MB or smaller.");
 
-        var provider = await settings.ResolveProviderAsync(user.Id, cancellationToken);
+        var provider = await llmSettings.ResolveProviderAsync(user.Id, cancellationToken);
         if (provider is null)
             return BadRequest("Receipt recognition is not configured.");
 
@@ -109,56 +109,36 @@ public class ReceiptRecognitionController(
         return mapper.Map<ReceiptRecognitionDto>(result);
     }
 
-    /// <summary>Recognition availability and the current user's custom provider. The API key is never returned.</summary>
-    [HttpGet("settings", Name = "GetReceiptRecognitionSettings")]
+    /// <summary>Get receipt recognition availability and image limits for the current user.</summary>
+    [HttpGet("capabilities", Name = "GetReceiptRecognitionCapabilities")]
     [Produces("application/json")]
     [ProducesResponseType(200)]
     [ProducesResponseType(401)]
-    public async Task<ActionResult<ReceiptRecognitionSettingsDto>> GetSettings(
+    public async Task<ActionResult<ReceiptRecognitionCapabilitiesDto>> GetCapabilities(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
 
-        return await settings.GetAsync(user.Id, cancellationToken);
+        var providerSettings = await llmSettings.GetAsync(user.Id, cancellationToken);
+        return new ReceiptRecognitionCapabilitiesDto
+        {
+            Available = providerSettings.Available,
+            CustomProviderAllowed = providerSettings.CustomProviderAllowed,
+            MaxImages = options.Value.MaxImages
+        };
     }
+}
 
-    /// <summary>
-    ///     Save the current user's custom provider. Leaving <c>apiKey</c> empty keeps the stored key.
-    ///     Returns 400 with a reason when the provider is turned on but incomplete.
-    /// </summary>
-    [HttpPut("settings", Name = "UpdateReceiptRecognitionSettings")]
-    [Produces("application/json")]
-    [ProducesResponseType(200)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(401)]
-    public async Task<ActionResult<ReceiptRecognitionSettingsDto>> UpdateSettings(
-        ReceiptRecognitionSettingsInputDto input,
-        CancellationToken cancellationToken = default)
-    {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null)
-            return Unauthorized();
+public sealed record ReceiptRecognitionCapabilitiesDto
+{
+    /// <summary>True when this user has a provider available for receipt recognition.</summary>
+    public required bool Available { get; init; }
 
-        var update = await settings.UpdateAsync(user.Id, input, cancellationToken);
-        if (update.Error is not null)
-            return BadRequest(update.Error);
+    /// <summary>True when the user can configure a provider if recognition is unavailable.</summary>
+    public required bool CustomProviderAllowed { get; init; }
 
-        return update.Settings!;
-    }
-
-    /// <summary>Remove the current user's custom provider and its stored key.</summary>
-    [HttpDelete("settings", Name = "ClearReceiptRecognitionSettings")]
-    [ProducesResponseType(204)]
-    [ProducesResponseType(401)]
-    public async Task<IActionResult> ClearSettings(CancellationToken cancellationToken = default)
-    {
-        var user = await userManager.GetUserAsync(User);
-        if (user is null)
-            return Unauthorized();
-
-        await settings.ClearAsync(user.Id, cancellationToken);
-        return NoContent();
-    }
+    /// <summary>Maximum number of images in one recognition request.</summary>
+    public required int MaxImages { get; init; }
 }
