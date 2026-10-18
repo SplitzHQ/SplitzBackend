@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using SplitzBackend.Models;
 using SplitzBackend.Services;
 using SplitzBackend.Services.RateLimiting;
+using SplitzBackend.Services.Recognition;
 
 namespace SplitzBackend.Controllers;
 
@@ -76,9 +77,14 @@ public class TransactionController(
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
             return BadRequest("Balance user not in group");
 
+        var receipt = await FindLinkableReceiptAsync(transactionInputDto.ReceiptId, user);
+        if (transactionInputDto.ReceiptId is not null && receipt is null)
+            return BadRequest("Receipt not found");
+
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
         context.Transactions.Add(transaction);
+        receipt?.Transaction = transaction;
         await context.SaveChangesAsync();
 
         ApplyGroupBalanceChanges(group, transaction.Balances, transaction.Currency);
@@ -95,6 +101,32 @@ public class TransactionController(
 
         return CreatedAtAction(nameof(GetTransaction), new { id = transaction.TransactionId },
             mapper.Map<TransactionDto>(transaction));
+    }
+
+    /// <summary>
+    ///     Loads the receipt in the input which belongs to the caller and is not yet linked
+    ///     to another expense. Returns null when no id was given or the id cannot be used.
+    /// </summary>
+    private async Task<Receipt?> FindLinkableReceiptAsync(Guid? receiptId, SplitzUser user,
+        Guid? currentTransactionId = null)
+    {
+        if (receiptId is null)
+            return null;
+
+        return await context.Receipts.FirstOrDefaultAsync(r =>
+            r.ReceiptId == receiptId && r.UserId == user.Id &&
+            (r.TransactionId == null || r.TransactionId == currentTransactionId));
+    }
+
+    /// <summary>
+    ///     Receipt images are also used in the receipt row, so a transaction must not
+    ///     delete receipt images when the photo is replaced or the transaction is removed.
+    /// </summary>
+    private Task DeletePhotoIfOwnedAsync(string? photo, CancellationToken cancellationToken)
+    {
+        return ReceiptImageKeys.IsReceiptImage(photo)
+            ? Task.CompletedTask
+            : imageStorage.DeleteIfOwnedAsync(photo, cancellationToken);
     }
 
     /// <summary>
@@ -180,7 +212,7 @@ public class TransactionController(
 
         transaction.Photo = result.ObjectKey;
         await context.SaveChangesAsync(cancellationToken);
-        await imageStorage.DeleteIfOwnedAsync(existingPhoto, cancellationToken);
+        await DeletePhotoIfOwnedAsync(existingPhoto, cancellationToken);
         return Ok(result);
     }
 
@@ -226,6 +258,11 @@ public class TransactionController(
         if (transactionMemberIds.Any(id => !targetMemberIds.Contains(id)))
             return BadRequest("Balance user not in group");
 
+        var receipt = await FindLinkableReceiptAsync(transactionInputDto.ReceiptId, user,
+            transactionId);
+        if (transactionInputDto.ReceiptId is not null && receipt is null)
+            return BadRequest("Receipt not found");
+
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
         // Revert previous balance changes
@@ -243,6 +280,7 @@ public class TransactionController(
         // Restore non-input fields that SetValues would have nulled out
         existingTransaction.InvoiceId = preservedInvoiceId;
         existingTransaction.Photo = preservedPhoto;
+        receipt?.Transaction = existingTransaction;
         await context.SaveChangesAsync();
 
         // Apply new balance changes (existingTransaction now has updated balances)
@@ -311,7 +349,7 @@ public class TransactionController(
 
         await dbTransaction.CommitAsync(cancellationToken);
 
-        await imageStorage.DeleteIfOwnedAsync(receipt, cancellationToken);
+        await DeletePhotoIfOwnedAsync(receipt, cancellationToken);
 
         return NoContent();
     }

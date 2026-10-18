@@ -14,6 +14,8 @@ using SplitzBackend.Models;
 using SplitzBackend.OpenAPIGen.Filter;
 using SplitzBackend.Services;
 using SplitzBackend.Services.RateLimiting;
+using SplitzBackend.Services.Recognition;
+using SplitzBackend.Services.LLM;
 
 namespace SplitzBackend;
 
@@ -174,6 +176,26 @@ public class Program
         builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
         builder.Services.AddScoped<IInvoiceDebtService, InvoiceDebtService>();
         builder.Services.AddScoped<INotificationService, NotificationService>();
+
+        // Shared provider configuration and per-user overrides for AI features.
+        builder.Services.AddSingleton<IValidateOptions<LLMOptions>, LLMOptionsValidator>();
+        builder.Services.AddOptions<LLMOptions>()
+            .Bind(builder.Configuration.GetSection(LLMOptions.SectionName))
+            .ValidateOnStart();
+        builder.Services.AddScoped<ILLMSettingsService, LLMSettingsService>();
+
+        // Receipt image limits and recognition services.
+        builder.Services.AddSingleton<IValidateOptions<ReceiptRecognitionOptions>, ReceiptRecognitionOptionsValidator>();
+        builder.Services.AddOptions<ReceiptRecognitionOptions>()
+            .Bind(builder.Configuration.GetSection(ReceiptRecognitionOptions.SectionName))
+            .ValidateOnStart();
+        builder.Services.AddHttpClient(OpenAiClient.HttpClientName, client =>
+        {
+            // The per-call timeout is enforced by the client itself; keep the handler timeout out of the way.
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        });
+        builder.Services.AddSingleton<IVisionModelClient, OpenAiClient>();
+        builder.Services.AddScoped<IReceiptRecognitionService, ReceiptRecognitionService>();
 
         var app = builder.Build();
 

@@ -43,9 +43,9 @@ Image upload and signed image URL flows require the `Storage` section to be conf
 }
 ```
 
-For local development, prefer user secrets or environment variables for credentials instead of committing real values.
-
 Transactional account email uses the `Email` section. If `Email:Enabled` is false or no API key is configured, registration still succeeds and confirmation email sending is skipped; password recovery should be treated as unavailable by clients. Configure real values through user secrets or environment variables, not committed settings:
+
+When `Email:Enabled` is true, production startup validates that the required provider fields are configured.
 
 ```json
 "Email": {
@@ -60,7 +60,29 @@ Transactional account email uses the `Email` section. If `Email:Enabled` is fals
 }
 ```
 
-When `Email:Enabled` is true, production startup validates that the required provider fields are configured.
+The `LLM` section configures the OpenAI-compatible server provider shared by AI features. Users can read, save and delete their own provider with `GET`, `PUT` and `DELETE /llmsettings`. Set `AllowCustomProvider` to true to allow custom providers provided by users.
+
+`Endpoint` is the API base URL; `/chat/completions` is appended unless the value already ends with it. User API keys are stored with ASP.NET Core Data Protection, so the data protection key ring must be persisted across deployments (for example by mounting the key folder in a container); if the key ring is lost, users are shown as having no key and must enter it again.
+
+```json
+"LLM": {
+  "Enabled": false,
+  "Endpoint": "https://api.openai.com/v1",
+  "Model": "",
+  "ApiKey": "",
+  "AllowCustomProvider": true,
+  "TimeoutSeconds": 90
+}
+```
+
+Receipt recognition sends photos to the vision model and fills the expense info with the recognized data. `GET /receipt/capabilities` returns availability, custom provider policy and `maxImages` for the current user. Each recognition request has its own per-user limit, `RateLimiting:ReceiptRecognitionPerUser` (30 per hour by default).
+
+```json
+"ReceiptRecognition": {
+  "MaxImages": 6,
+  "MaxImageSize": 1600
+}
+```
 
 ## Development
 
@@ -96,6 +118,8 @@ Main API areas:
 - `/group`: group list/detail, member invites (send, accept, ignore), join links, group avatar, group transactions, and group invoices
 - `/transaction`: transaction detail/create/update/delete and receipt upload
 - `/transactiondraft`: draft detail/create/update/delete and receipt upload
+- `/receipt`: recognize an expense from one or more receipt images, fetch a saved receipt, and check recognition availability.
+- `/llmsettings`: manage the user's model provider
 - `/invoice`: invoice list/detail/create/update/delete and settlement records
 - `/notification`: notification list (filterable by category), unread summary, read/dismiss actions, the type catalog, and per-user preferences (global or per group)
 
@@ -137,6 +161,7 @@ To recreate a local development database, stop the app and delete `app.db`, `app
 - [src/Controllers](src/Controllers): REST controllers and request authorization logic
 - [src/Models](src/Models): entities, DTOs, validation attributes, and typed notification payloads
 - [src/Services](src/Services): invoice debt calculation, image processing/storage, and S3-compatible storage helpers
+- [src/Services/Recognition](src/Services/Recognition): receipt recognition options, the OpenAI-compatible client, prompt, reply parser and per-user provider settings
 - [src/OpenAPIGen/Filter](src/OpenAPIGen/Filter): Swashbuckle filters for bearer auth, decimal strings, and enum schemas
 
 ## Notes

@@ -422,6 +422,33 @@ namespace SplitzBackend.src.Migrations
                     b.ToTable("InvoiceSettlement");
                 });
 
+            modelBuilder.Entity("SplitzBackend.Models.LLMSettings", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Endpoint")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProtectedApiKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdateTime")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("LLMSettings");
+                });
+
             modelBuilder.Entity("SplitzBackend.Models.Notification", b =>
                 {
                     b.Property<Guid>("NotificationId")
@@ -500,6 +527,88 @@ namespace SplitzBackend.src.Migrations
                         .IsUnique();
 
                     b.ToTable("NotificationPreferences");
+                });
+
+            modelBuilder.Entity("SplitzBackend.Models.Receipt", b =>
+                {
+                    b.Property<Guid>("ReceiptId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("ImageKeys")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Merchant")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RawResponse")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("TransactionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("TransactionTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("UsedCustomProvider")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ReceiptId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("UserId", "CreateTime");
+
+                    b.ToTable("Receipts");
                 });
 
             modelBuilder.Entity("SplitzBackend.Models.SplitzUser", b =>
@@ -980,6 +1089,17 @@ namespace SplitzBackend.src.Migrations
                     b.Navigation("ToUser");
                 });
 
+            modelBuilder.Entity("SplitzBackend.Models.LLMSettings", b =>
+                {
+                    b.HasOne("SplitzBackend.Models.SplitzUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SplitzBackend.Models.Notification", b =>
                 {
                     b.HasOne("SplitzBackend.Models.SplitzUser", "User")
@@ -1005,6 +1125,24 @@ namespace SplitzBackend.src.Migrations
                         .IsRequired();
 
                     b.Navigation("Group");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SplitzBackend.Models.Receipt", b =>
+                {
+                    b.HasOne("SplitzBackend.Models.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SplitzBackend.Models.SplitzUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Transaction");
 
                     b.Navigation("User");
                 });

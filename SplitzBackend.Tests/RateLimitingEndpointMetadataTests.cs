@@ -23,7 +23,7 @@ public class RateLimitingEndpointMetadataTests
                 endpoint => NormalizeRoute(endpoint.RoutePattern.RawText),
                 StringComparer.OrdinalIgnoreCase);
 
-        Assert.Equal(12, protectedEndpoints.Count);
+        Assert.Equal(13, protectedEndpoints.Count);
         AssertUploadEndpoint(protectedEndpoints["/account/avatar"]);
         AssertUploadEndpoint(protectedEndpoints["/group/{groupid}/avatar"]);
         AssertUploadEndpoint(protectedEndpoints["/transaction/{id}/receipt"]);
@@ -61,6 +61,12 @@ public class RateLimitingEndpointMetadataTests
                 protectedEndpoints["/account/resetpassword"],
                 "/account/resetPassword",
                 RateLimitPolicyNames.PasswordResetIp);
+        // Recognition holds a request open for the whole model call, so it has its own per-user window
+        // and stays out of the shared upload concurrency pool.
+        AssertEndpoint(
+                protectedEndpoints["/receipt"],
+                "Receipt",
+                RateLimitPolicyNames.ReceiptRecognitionPerUser);
 
         var uploadEndpoints = endpoints
             .OfType<RouteEndpoint>()

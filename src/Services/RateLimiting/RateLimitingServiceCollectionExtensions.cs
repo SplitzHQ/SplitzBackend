@@ -48,7 +48,10 @@ public static class RateLimitingServiceCollectionExtensions
                 new IpRateLimiterPolicy(RateLimitCategories.PasswordReset, o => o.PasswordReset.Ip));
             options.AddPolicy(
                 RateLimitPolicyNames.UploadPerUser,
-                new UploadPerUserRateLimiterPolicy());
+                new UserRateLimiterPolicy(RateLimitCategories.Upload, o => o.Upload.HourlyPerUser));
+            options.AddPolicy(
+                RateLimitPolicyNames.ReceiptRecognitionPerUser,
+                new UserRateLimiterPolicy(RateLimitCategories.ReceiptRecognition, o => o.ReceiptRecognitionPerUser));
         });
 
         return services;

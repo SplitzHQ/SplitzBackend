@@ -43,6 +43,8 @@ public class MapperProfile : Profile
 
         CreateMap<FriendRequest, FriendRequestDto>();
         CreateMap<GroupInvite, GroupInviteDto>();
+        CreateMap<Receipt, ReceiptDto>()
+            .ForMember(d => d.Images, opt => opt.MapFrom<PhotoListResolver, List<string>>(s => s.ImageKeys));
 
         CreateMap<GroupInputDto, Group>();
         CreateMap<TransactionInputDto, Transaction>();
@@ -59,6 +61,21 @@ public sealed class PhotoResolver(IObjectStorage objectStorage)
         ResolutionContext context)
     {
         return ObjectStorageUrlBuilder.GenerateUrlFromKey(objectStorage, sourceMember);
+    }
+}
+
+/// <summary>Same as <see cref="PhotoResolver" />, for a list of stored object keys.</summary>
+public sealed class PhotoListResolver(IObjectStorage objectStorage)
+    : IMemberValueResolver<object, object, List<string>, List<string>>
+{
+    public List<string> Resolve(object source, object destination, List<string> sourceMember,
+        List<string> destMember, ResolutionContext context)
+    {
+        return sourceMember
+            .Select(key => ObjectStorageUrlBuilder.GenerateUrlFromKey(objectStorage, key))
+            .Where(url => url is not null)
+            .Select(url => url!)
+            .ToList();
     }
 }
 
