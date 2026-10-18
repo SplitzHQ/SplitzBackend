@@ -43,7 +43,7 @@ public class MapperProfile : Profile
 
         CreateMap<FriendRequest, FriendRequestDto>();
         CreateMap<GroupInvite, GroupInviteDto>();
-        CreateMap<ReceiptRecognition, ReceiptRecognitionDto>()
+        CreateMap<Receipt, ReceiptDto>()
             .ForMember(d => d.Images, opt => opt.MapFrom<PhotoListResolver, List<string>>(s => s.ImageKeys));
 
         CreateMap<GroupInputDto, Group>();

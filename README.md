@@ -75,7 +75,7 @@ The `LLM` section configures the OpenAI-compatible server provider shared by AI 
 }
 ```
 
-Receipt recognition sends photos to the vision model and fills the expense info with the recognized data. `GET /receiptrecognition/capabilities` returns availability, custom provider policy and `maxImages` for the current user. Each recognition request has its own per-user limit, `RateLimiting:ReceiptRecognitionPerUser` (30 per hour by default).
+Receipt recognition sends photos to the vision model and fills the expense info with the recognized data. `GET /receipt/capabilities` returns availability, custom provider policy and `maxImages` for the current user. Each recognition request has its own per-user limit, `RateLimiting:ReceiptRecognitionPerUser` (30 per hour by default).
 
 ```json
 "ReceiptRecognition": {

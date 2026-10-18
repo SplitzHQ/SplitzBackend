@@ -12,10 +12,10 @@ public interface IReceiptRecognitionService
 {
     /// <summary>
     ///     Processes and stores every upload, calls <paramref name="provider" /> once with all of them,
-    ///     and saves a <see cref="ReceiptRecognition" /> row. A provider failure is recorded on the row
+    ///     and saves a <see cref="Receipt" /> row. A provider failure is recorded on the row
     ///     and does not throw; only an unreadable image throws <see cref="InvalidImageException" />.
     /// </summary>
-    Task<ReceiptRecognition> RecognizeAsync(
+    Task<Receipt> RecognizeAsync(
         string userId,
         LLMProvider provider,
         IReadOnlyList<ReceiptImageUpload> uploads,
@@ -23,21 +23,20 @@ public interface IReceiptRecognitionService
         CancellationToken cancellationToken);
 }
 
-/// <summary>Helpers for the object keys under which recognition images are stored.</summary>
-public static class ReceiptRecognitionImageKeys
+/// <summary>Helpers for the object keys under which receipt images are stored.</summary>
+public static class ReceiptImageKeys
 {
     public const string Prefix = "receipts/";
 
-    public static string Build(string userId, Guid recognitionId, int index, string extension)
+    public static string Build(string userId, Guid receiptId, int index, string extension)
     {
-        return $"{Prefix}{userId}/{recognitionId}/{index}{extension}";
+        return $"{Prefix}{userId}/{receiptId}/{index}{extension}";
     }
 
     /// <summary>
-    ///     True for images owned by a recognition row. A transaction may show one of these as its photo,
-    ///     but must not delete it, because the recognition record still points at it.
+    ///     Checks if the object key corresponds to an image is owned by a receipt row.
     /// </summary>
-    public static bool IsRecognitionImage(string? objectKey)
+    public static bool IsReceiptImage(string? objectKey)
     {
         return objectKey is not null && objectKey.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase);
     }
@@ -53,32 +52,32 @@ public sealed class ReceiptRecognitionService(
 {
     private const int MaxErrorLength = 1000;
 
-    public async Task<ReceiptRecognition> RecognizeAsync(
+    public async Task<Receipt> RecognizeAsync(
         string userId,
         LLMProvider provider,
         IReadOnlyList<ReceiptImageUpload> uploads,
         IReadOnlyCollection<string>? allowedCategories,
         CancellationToken cancellationToken)
     {
-        var recognitionId = Guid.NewGuid();
-        var images = new List<RecognitionImage>(uploads.Count);
+        var receiptId = Guid.NewGuid();
+        var images = new List<VisionModelImage>(uploads.Count);
         var imageKeys = new List<string>(uploads.Count);
 
         // Every image is resized once and that single encoding is both stored and sent to the model.
         for (var index = 0; index < uploads.Count; index++)
         {
             var processed = await ProcessAsync(uploads[index], index, cancellationToken);
-            var key = ReceiptRecognitionImageKeys.Build(userId, recognitionId, index + 1, processed.FileExtension);
+            var key = ReceiptImageKeys.Build(userId, receiptId, index + 1, processed.FileExtension);
             using var content = new MemoryStream(processed.Bytes, false);
             await objectStorage.UploadAsync(key, processed.ContentType, content, cancellationToken);
             imageKeys.Add(key);
-            images.Add(new RecognitionImage(processed.ContentType, processed.Bytes));
+            images.Add(new VisionModelImage(processed.ContentType, processed.Bytes));
         }
 
         // Saved before the model call so the images stay traceable even if the request is cut off.
-        var recognition = new ReceiptRecognition
+        var receipt = new Receipt
         {
-            ReceiptRecognitionId = recognitionId,
+            ReceiptId = receiptId,
             UserId = userId,
             CreateTime = DateTime.UtcNow,
             ImageKeys = imageKeys,
@@ -87,7 +86,7 @@ public sealed class ReceiptRecognitionService(
             UsedCustomProvider = provider.IsCustom,
             Status = ReceiptRecognitionStatus.Pending
         };
-        context.ReceiptRecognitions.Add(recognition);
+        context.Receipts.Add(receipt);
         await context.SaveChangesAsync(cancellationToken);
 
         try
@@ -98,20 +97,20 @@ public sealed class ReceiptRecognitionService(
                 ReceiptRecognitionPrompt.BuildUserPrompt(images.Count),
                 images,
                 cancellationToken);
-            recognition.RawResponse = reply;
+            receipt.RawResponse = reply;
 
             if (ReceiptRecognitionResultParser.TryParse(reply, allowedCategories, out var result, out var parseError))
-                Apply(recognition, result);
+                Apply(receipt, result);
             else
-                Fail(recognition, parseError!);
+                Fail(receipt, parseError!);
         }
         catch (VisionModelRequestException ex)
         {
-            Fail(recognition, ex.Message);
+            Fail(receipt, ex.Message);
         }
 
         await context.SaveChangesAsync(cancellationToken);
-        return recognition;
+        return receipt;
     }
 
     private async Task<(byte[] Bytes, string ContentType, string FileExtension)> ProcessAsync(
@@ -131,23 +130,23 @@ public sealed class ReceiptRecognitionService(
         }
     }
 
-    private static void Apply(ReceiptRecognition recognition, ReceiptRecognitionResult result)
+    private static void Apply(Receipt receipt, ReceiptRecognitionResult result)
     {
-        recognition.Status = ReceiptRecognitionStatus.Succeeded;
-        recognition.Error = null;
-        recognition.Name = result.Name;
-        recognition.Merchant = result.Merchant;
-        recognition.Amount = result.Amount;
-        recognition.Currency = result.Currency;
-        recognition.TransactionTime = result.TransactionTime;
-        recognition.Category = result.Category;
-        recognition.Location = result.Location;
-        recognition.Notes = result.Notes;
+        receipt.Status = ReceiptRecognitionStatus.Succeeded;
+        receipt.Error = null;
+        receipt.Name = result.Name;
+        receipt.Merchant = result.Merchant;
+        receipt.Amount = result.Amount;
+        receipt.Currency = result.Currency;
+        receipt.TransactionTime = result.TransactionTime;
+        receipt.Category = result.Category;
+        receipt.Location = result.Location;
+        receipt.Notes = result.Notes;
     }
 
-    private static void Fail(ReceiptRecognition recognition, string error)
+    private static void Fail(Receipt receipt, string error)
     {
-        recognition.Status = ReceiptRecognitionStatus.Failed;
-        recognition.Error = error.Length <= MaxErrorLength ? error : error[..MaxErrorLength];
+        receipt.Status = ReceiptRecognitionStatus.Failed;
+        receipt.Error = error.Length <= MaxErrorLength ? error : error[..MaxErrorLength];
     }
 }

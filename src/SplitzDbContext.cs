@@ -25,7 +25,7 @@ public class SplitzDbContext(DbContextOptions<SplitzDbContext> options) : Identi
 
     public DbSet<GroupInvite> GroupInvites { get; set; } = null!;
 
-    public DbSet<ReceiptRecognition> ReceiptRecognitions { get; set; } = null!;
+    public DbSet<Receipt> Receipts { get; set; } = null!;
 
     public DbSet<LLMSettings> LLMSettings { get; set; } = null!;
 
@@ -56,8 +56,8 @@ public class SplitzDbContext(DbContextOptions<SplitzDbContext> options) : Identi
             .HasForeignKey(i => i.GroupId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // A recognition outlives the expense made from it; deleting the expense only unlinks it.
-        builder.Entity<ReceiptRecognition>()
+        // A receipt outlives its expense; deleting the expense only unlinks it.
+        builder.Entity<Receipt>()
             .HasOne(r => r.Transaction)
             .WithMany()
             .HasForeignKey(r => r.TransactionId)

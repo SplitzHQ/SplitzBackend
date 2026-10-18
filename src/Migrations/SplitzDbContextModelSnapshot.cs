@@ -529,9 +529,9 @@ namespace SplitzBackend.src.Migrations
                     b.ToTable("NotificationPreferences");
                 });
 
-            modelBuilder.Entity("SplitzBackend.Models.ReceiptRecognition", b =>
+            modelBuilder.Entity("SplitzBackend.Models.Receipt", b =>
                 {
-                    b.Property<Guid>("ReceiptRecognitionId")
+                    b.Property<Guid>("ReceiptId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
@@ -602,13 +602,13 @@ namespace SplitzBackend.src.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ReceiptRecognitionId");
+                    b.HasKey("ReceiptId");
 
                     b.HasIndex("TransactionId");
 
                     b.HasIndex("UserId", "CreateTime");
 
-                    b.ToTable("ReceiptRecognitions");
+                    b.ToTable("Receipts");
                 });
 
             modelBuilder.Entity("SplitzBackend.Models.SplitzUser", b =>
@@ -1129,7 +1129,7 @@ namespace SplitzBackend.src.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SplitzBackend.Models.ReceiptRecognition", b =>
+            modelBuilder.Entity("SplitzBackend.Models.Receipt", b =>
                 {
                     b.HasOne("SplitzBackend.Models.Transaction", "Transaction")
                         .WithMany()

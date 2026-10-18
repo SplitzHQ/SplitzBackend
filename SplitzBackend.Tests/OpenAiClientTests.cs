@@ -21,8 +21,8 @@ public class OpenAiClientTests
         var client = CreateClient(handler);
         var images = new[]
         {
-            new RecognitionImage("image/webp", [1, 2, 3]),
-            new RecognitionImage("image/webp", [4, 5, 6])
+            new VisionModelImage("image/webp", [1, 2, 3]),
+            new VisionModelImage("image/webp", [4, 5, 6])
         };
 
         var reply = await client.SendRequestAsync(Provider, "system", "user", images, CancellationToken.None);

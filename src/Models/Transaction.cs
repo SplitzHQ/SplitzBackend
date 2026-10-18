@@ -63,5 +63,6 @@ public class TransactionInputDto : TransactionBase
 {
     public List<TransactionBalanceInputDto> Balances { get; set; } = new();
 
-    public Guid? ReceiptRecognitionId { get; set; }
+    /// <summary>Receipt to link to this expense, if one was recognized.</summary>
+    public Guid? ReceiptId { get; set; }
 }

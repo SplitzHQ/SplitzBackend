@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SplitzBackend.Models;
 
-/// <summary>Outcome of one recognition request.</summary>
+/// <summary>Recognition status of a receipt.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ReceiptRecognitionStatus
 {
@@ -15,7 +15,7 @@ public enum ReceiptRecognitionStatus
     /// <summary>The model answered and the reply was parsed.</summary>
     Succeeded = 1,
 
-    /// <summary>The model call failed or its reply could not be parsed. See <see cref="ReceiptRecognition.Error" />.</summary>
+    /// <summary>The model call failed or its reply could not be parsed. See <see cref="Receipt.Error" />.</summary>
     Failed = 2
 }
 
@@ -23,9 +23,9 @@ public enum ReceiptRecognitionStatus
 /// Represents a single receipt.
 /// </summary>
 [Index(nameof(UserId), nameof(CreateTime))]
-public class ReceiptRecognition
+public class Receipt
 {
-    public Guid ReceiptRecognitionId { get; set; }
+    public Guid ReceiptId { get; set; }
 
     public required string UserId { get; set; }
 
@@ -84,10 +84,11 @@ public class ReceiptRecognition
     public Transaction? Transaction { get; set; }
 }
 
-/// <summary>What the client receives after a recognition request, or when it fetches an old one.</summary>
-public class ReceiptRecognitionDto
+/// <summary>Receipt details returned after recognition or when fetching a stored receipt.</summary>
+public class ReceiptDto
 {
-    public required Guid ReceiptRecognitionId { get; set; }
+    /// <summary>Unique identifier of the receipt.</summary>
+    public required Guid ReceiptId { get; set; }
 
     public required DateTime CreateTime { get; set; }
 

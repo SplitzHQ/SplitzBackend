@@ -232,7 +232,7 @@ internal sealed class FakeReceiptRecognitionClient : IVisionModelClient
         LLMProvider provider,
         string systemPrompt,
         string userPrompt,
-        IReadOnlyList<RecognitionImage> images,
+        IReadOnlyList<VisionModelImage> images,
         CancellationToken cancellationToken)
     {
         lock (Calls)
@@ -250,7 +250,7 @@ internal sealed record RecordedRecognitionCall(
     LLMProvider Provider,
     string SystemPrompt,
     string UserPrompt,
-    List<RecognitionImage> Images);
+    List<VisionModelImage> Images);
 
 internal sealed class RecordingIdentityEmailSender : IEmailSender<SplitzUser>
 {

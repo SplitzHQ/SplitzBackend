@@ -30,7 +30,7 @@ public sealed class OpenAiClient(
         LLMProvider provider,
         string systemPrompt,
         string userPrompt,
-        IReadOnlyList<RecognitionImage> images,
+        IReadOnlyList<VisionModelImage> images,
         CancellationToken cancellationToken)
     {
         var request = new ChatCompletionRequest
@@ -85,7 +85,7 @@ public sealed class OpenAiClient(
     }
 
     /// <summary>The user turn: the text instruction first, then every image in upload order.</summary>
-    private static List<ContentPart> BuildUserContent(string userPrompt, IReadOnlyList<RecognitionImage> images)
+    private static List<ContentPart> BuildUserContent(string userPrompt, IReadOnlyList<VisionModelImage> images)
     {
         var parts = new List<ContentPart>(images.Count + 1) { new() { Type = "text", Text = userPrompt } };
         parts.AddRange(images.Select(image => new ContentPart

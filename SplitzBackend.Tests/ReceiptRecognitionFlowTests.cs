@@ -38,7 +38,7 @@ public class ReceiptRecognitionFlowTests
         Assert.False(settings.GetProperty("hasApiKey").GetBoolean());
         Assert.False(settings.GetProperty("available").GetBoolean());
 
-        var response = await PostRecognitionAsync(client, user, 1);
+        var response = await PostReceiptRecognitionAsync(client, user, 1);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("not configured", await response.Content.ReadAsStringAsync());
     }
@@ -114,7 +114,7 @@ public class ReceiptRecognitionFlowTests
             JsonSerializer.Serialize(new { enabled = false }));
         Assert.Equal(HttpStatusCode.BadRequest, update.StatusCode);
         var capabilities = await ReadAsync<JsonElement>(
-            await SendAsync(client, user, HttpMethod.Get, "/receiptrecognition/capabilities"));
+            await SendAsync(client, user, HttpMethod.Get, "/receipt/capabilities"));
         Assert.False(capabilities.GetProperty("available").GetBoolean());
         Assert.False(capabilities.GetProperty("customProviderAllowed").GetBoolean());
         Assert.Equal(6, capabilities.GetProperty("maxImages").GetInt32());
@@ -132,27 +132,27 @@ public class ReceiptRecognitionFlowTests
         await ConfigureCustomProviderAsync(client, user);
 
         fakeModel.EnqueueReply(ModelReply);
-        var response = await PostRecognitionAsync(client, user, 2, ["dining_out", "groceries"]);
+        var response = await PostReceiptRecognitionAsync(client, user, 2, ["dining_out", "groceries"]);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var recognition = await ReadAsync<JsonElement>(response);
+        var receipt = await ReadAsync<JsonElement>(response);
 
-        Assert.Equal("Succeeded", recognition.GetProperty("status").GetString());
-        Assert.Equal("Blue Bottle", recognition.GetProperty("name").GetString());
-        Assert.Equal("Blue Bottle Coffee", recognition.GetProperty("merchant").GetString());
-        Assert.Equal(12.50m, recognition.GetProperty("amount").GetDecimal());
-        Assert.Equal("USD", recognition.GetProperty("currency").GetString());
-        Assert.Equal("dining_out", recognition.GetProperty("category").GetString());
-        Assert.Equal("Mint St", recognition.GetProperty("location").GetString());
-        Assert.Equal("2 lattes", recognition.GetProperty("notes").GetString());
-        Assert.Equal("vision-1", recognition.GetProperty("model").GetString());
-        Assert.True(recognition.GetProperty("usedCustomProvider").GetBoolean());
-        Assert.Contains("Blue Bottle", recognition.GetProperty("rawResponse").GetString());
-        Assert.Equal(JsonValueKind.Null, recognition.GetProperty("transactionId").ValueKind);
+        Assert.Equal("Succeeded", receipt.GetProperty("status").GetString());
+        Assert.Equal("Blue Bottle", receipt.GetProperty("name").GetString());
+        Assert.Equal("Blue Bottle Coffee", receipt.GetProperty("merchant").GetString());
+        Assert.Equal(12.50m, receipt.GetProperty("amount").GetDecimal());
+        Assert.Equal("USD", receipt.GetProperty("currency").GetString());
+        Assert.Equal("dining_out", receipt.GetProperty("category").GetString());
+        Assert.Equal("Mint St", receipt.GetProperty("location").GetString());
+        Assert.Equal("2 lattes", receipt.GetProperty("notes").GetString());
+        Assert.Equal("vision-1", receipt.GetProperty("model").GetString());
+        Assert.True(receipt.GetProperty("usedCustomProvider").GetBoolean());
+        Assert.Contains("Blue Bottle", receipt.GetProperty("rawResponse").GetString());
+        Assert.Equal(JsonValueKind.Null, receipt.GetProperty("transactionId").ValueKind);
 
-        var recognitionId = recognition.GetProperty("receiptRecognitionId").GetGuid();
-        var images = recognition.GetProperty("images").EnumerateArray().Select(i => i.GetString()!).ToList();
+        var receiptId = receipt.GetProperty("receiptId").GetGuid();
+        var images = receipt.GetProperty("images").EnumerateArray().Select(i => i.GetString()!).ToList();
         Assert.Equal(2, images.Count);
-        Assert.All(images, image => Assert.StartsWith($"receipts/{user.UserId}/{recognitionId}/", image));
+        Assert.All(images, image => Assert.StartsWith($"receipts/{user.UserId}/{receiptId}/", image));
         Assert.EndsWith("/1.webp", images[0]);
         Assert.EndsWith("/2.webp", images[1]);
 
@@ -164,31 +164,31 @@ public class ReceiptRecognitionFlowTests
         Assert.Contains("2 images", call.UserPrompt);
 
         // Someone else cannot read or link it.
-        var foreign = await SendAsync(client, stranger, HttpMethod.Get, $"/receiptrecognition/{recognitionId}");
+        var foreign = await SendAsync(client, stranger, HttpMethod.Get, $"/receipt/{receiptId}");
         Assert.Equal(HttpStatusCode.NotFound, foreign.StatusCode);
 
-        // Saving the expense links the recognition and uses its first image as the photo.
+        // Saving the expense links the receipt and uses its first image as the photo.
         var create = await SendAsync(client, user, HttpMethod.Post, "/transaction",
-            JsonSerializer.Serialize(TransactionBody(groupId, user.UserId, recognitionId)));
+            JsonSerializer.Serialize(TransactionBody(groupId, user.UserId, receiptId)));
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         var transaction = await ReadAsync<JsonElement>(create);
         Assert.Equal(images[0], transaction.GetProperty("photo").GetString());
         var transactionId = transaction.GetProperty("transactionId").GetGuid();
 
         var linked = await ReadAsync<JsonElement>(
-            await SendAsync(client, user, HttpMethod.Get, $"/receiptrecognition/{recognitionId}"));
+            await SendAsync(client, user, HttpMethod.Get, $"/receipt/{receiptId}"));
         Assert.Equal(transactionId, linked.GetProperty("transactionId").GetGuid());
 
-        // The same recognition cannot be attached to a second expense.
+        // The same receipt cannot be attached to a second expense.
         var reuse = await SendAsync(client, user, HttpMethod.Post, "/transaction",
-            JsonSerializer.Serialize(TransactionBody(groupId, user.UserId, recognitionId)));
+            JsonSerializer.Serialize(TransactionBody(groupId, user.UserId, receiptId)));
         Assert.Equal(HttpStatusCode.BadRequest, reuse.StatusCode);
 
-        // Deleting the expense keeps the recognition and its images.
+        // Deleting the expense keeps the receipt and its images.
         var delete = await SendAsync(client, user, HttpMethod.Delete, $"/transaction/{transactionId}");
         Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
         var unlinked = await ReadAsync<JsonElement>(
-            await SendAsync(client, user, HttpMethod.Get, $"/receiptrecognition/{recognitionId}"));
+            await SendAsync(client, user, HttpMethod.Get, $"/receipt/{receiptId}"));
         Assert.Equal(JsonValueKind.Null, unlinked.GetProperty("transactionId").ValueKind);
         Assert.Equal(2, unlinked.GetProperty("images").GetArrayLength());
     }
@@ -203,13 +203,13 @@ public class ReceiptRecognitionFlowTests
         await ConfigureCustomProviderAsync(client, user);
 
         fakeModel.EnqueueFailure("The model endpoint returned 429: slow down");
-        var failed = await ReadAsync<JsonElement>(await PostRecognitionAsync(client, user, 1));
+        var failed = await ReadAsync<JsonElement>(await PostReceiptRecognitionAsync(client, user, 1));
         Assert.Equal("Failed", failed.GetProperty("status").GetString());
         Assert.Contains("429", failed.GetProperty("error").GetString());
         Assert.Single(failed.GetProperty("images").EnumerateArray());
 
         fakeModel.EnqueueReply("Sorry, I cannot read this receipt.");
-        var unparsable = await ReadAsync<JsonElement>(await PostRecognitionAsync(client, user, 1));
+        var unparsable = await ReadAsync<JsonElement>(await PostReceiptRecognitionAsync(client, user, 1));
         Assert.Equal("Failed", unparsable.GetProperty("status").GetString());
         Assert.Contains("JSON", unparsable.GetProperty("error").GetString());
         Assert.Equal("Sorry, I cannot read this receipt.", unparsable.GetProperty("rawResponse").GetString());
@@ -236,15 +236,15 @@ public class ReceiptRecognitionFlowTests
         Assert.True(settings.GetProperty("available").GetBoolean());
         Assert.False(settings.TryGetProperty("maxImages", out _));
         var capabilities = await ReadAsync<JsonElement>(
-            await SendAsync(client, user, HttpMethod.Get, "/receiptrecognition/capabilities"));
+            await SendAsync(client, user, HttpMethod.Get, "/receipt/capabilities"));
         Assert.True(capabilities.GetProperty("available").GetBoolean());
         Assert.Equal(2, capabilities.GetProperty("maxImages").GetInt32());
 
-        var tooMany = await PostRecognitionAsync(client, user, 3);
+        var tooMany = await PostReceiptRecognitionAsync(client, user, 3);
         Assert.Equal(HttpStatusCode.BadRequest, tooMany.StatusCode);
 
         fakeModel.EnqueueReply(ModelReply);
-        var recognition = await ReadAsync<JsonElement>(await PostRecognitionAsync(client, user, 1));
+        var recognition = await ReadAsync<JsonElement>(await PostReceiptRecognitionAsync(client, user, 1));
         Assert.Equal("Succeeded", recognition.GetProperty("status").GetString());
         Assert.False(recognition.GetProperty("usedCustomProvider").GetBoolean());
         Assert.Equal("server-vision", recognition.GetProperty("model").GetString());
@@ -266,8 +266,8 @@ public class ReceiptRecognitionFlowTests
         await ConfigureCustomProviderAsync(client, user);
 
         fakeModel.EnqueueReply(ModelReply);
-        var first = await PostRecognitionAsync(client, user, 1);
-        var second = await PostRecognitionAsync(client, user, 1);
+        var first = await PostReceiptRecognitionAsync(client, user, 1);
+        var second = await PostReceiptRecognitionAsync(client, user, 1);
 
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.Equal(HttpStatusCode.TooManyRequests, second.StatusCode);
@@ -287,7 +287,7 @@ public class ReceiptRecognitionFlowTests
             currency = "USD",
             tags = Array.Empty<object>(),
             balances = new[] { new { userId, balance = "0.00" } },
-            receiptRecognitionId = recognitionId
+            receiptId = recognitionId
         };
     }
 
@@ -304,13 +304,13 @@ public class ReceiptRecognitionFlowTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    private static async Task<HttpResponseMessage> PostRecognitionAsync(
+    private static async Task<HttpResponseMessage> PostReceiptRecognitionAsync(
         HttpClient client,
         TestUser user,
         int fileCount,
         string[]? categories = null)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/receiptrecognition");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/receipt");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", user.Token);
         using var content = new MultipartFormDataContent();
         for (var index = 0; index < fileCount; index++)

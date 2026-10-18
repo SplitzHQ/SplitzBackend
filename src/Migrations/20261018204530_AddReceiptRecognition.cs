@@ -34,10 +34,10 @@ namespace SplitzBackend.src.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ReceiptRecognitions",
+                name: "Receipts",
                 columns: table => new
                 {
-                    ReceiptRecognitionId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ReceiptId = table.Column<Guid>(type: "TEXT", nullable: false),
                     UserId = table.Column<string>(type: "TEXT", nullable: false),
                     CreateTime = table.Column<DateTime>(type: "TEXT", nullable: false),
                     ImageKeys = table.Column<string>(type: "TEXT", nullable: false),
@@ -59,15 +59,15 @@ namespace SplitzBackend.src.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ReceiptRecognitions", x => x.ReceiptRecognitionId);
+                    table.PrimaryKey("PK_Receipts", x => x.ReceiptId);
                     table.ForeignKey(
-                        name: "FK_ReceiptRecognitions_AspNetUsers_UserId",
+                        name: "FK_Receipts_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ReceiptRecognitions_Transactions_TransactionId",
+                        name: "FK_Receipts_Transactions_TransactionId",
                         column: x => x.TransactionId,
                         principalTable: "Transactions",
                         principalColumn: "TransactionId",
@@ -75,13 +75,13 @@ namespace SplitzBackend.src.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ReceiptRecognitions_TransactionId",
-                table: "ReceiptRecognitions",
+                name: "IX_Receipts_TransactionId",
+                table: "Receipts",
                 column: "TransactionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ReceiptRecognitions_UserId_CreateTime",
-                table: "ReceiptRecognitions",
+                name: "IX_Receipts_UserId_CreateTime",
+                table: "Receipts",
                 columns: new[] { "UserId", "CreateTime" });
         }
 
@@ -92,7 +92,7 @@ namespace SplitzBackend.src.Migrations
                 name: "LLMSettings");
 
             migrationBuilder.DropTable(
-                name: "ReceiptRecognitions");
+                name: "Receipts");
         }
     }
 }

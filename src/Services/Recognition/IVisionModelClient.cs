@@ -3,7 +3,7 @@ using SplitzBackend.Services.LLM;
 namespace SplitzBackend.Services.Recognition;
 
 /// <summary>One image sent to the model, already resized and re-encoded.</summary>
-public sealed record RecognitionImage(string ContentType, byte[] Bytes);
+public sealed record VisionModelImage(string ContentType, byte[] Bytes);
 
 /// <summary>Talks to a vision model. Implementations return the assistant's reply text as is.</summary>
 public interface IVisionModelClient
@@ -17,7 +17,7 @@ public interface IVisionModelClient
         LLMProvider provider,
         string systemPrompt,
         string userPrompt,
-        IReadOnlyList<RecognitionImage> images,
+        IReadOnlyList<VisionModelImage> images,
         CancellationToken cancellationToken);
 }
 

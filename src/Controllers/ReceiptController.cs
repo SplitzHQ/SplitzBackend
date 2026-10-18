@@ -13,12 +13,12 @@ using SplitzBackend.Services.LLM;
 namespace SplitzBackend.Controllers;
 
 /// <summary>
-///     Upload receipt photos and read expense fields with the user's selected vision model.
+///     Upload receipt photos and auto fill expense fields.
 /// </summary>
 [Authorize]
 [ApiController]
 [Route("[controller]")]
-public class ReceiptRecognitionController(
+public class ReceiptController(
     SplitzDbContext context,
     UserManager<SplitzUser> userManager,
     IMapper mapper,
@@ -42,7 +42,7 @@ public class ReceiptRecognitionController(
     [ProducesResponseType(401)]
     [RequestSizeLimit(60 * 1024 * 1024)]
     [EnableRateLimiting(RateLimitPolicyNames.ReceiptRecognitionPerUser)]
-    public async Task<ActionResult<ReceiptRecognitionDto>> Recognize(
+    public async Task<ActionResult<ReceiptDto>> RecognizeReceipt(
         [FromForm] ReceiptRecognitionRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -74,7 +74,7 @@ public class ReceiptRecognitionController(
             var uploads = streams.Zip(files, (stream, file) => new ReceiptImageUpload(stream, file.ContentType))
                 .ToList();
             var result = await recognition.RecognizeAsync(user.Id, provider, uploads, categories, cancellationToken);
-            return Ok(mapper.Map<ReceiptRecognitionDto>(result));
+            return Ok(mapper.Map<ReceiptDto>(result));
         }
         catch (InvalidImageException ex)
         {
@@ -87,26 +87,26 @@ public class ReceiptRecognitionController(
         }
     }
 
-    /// <summary>Get one of the current user's recognitions.</summary>
-    [HttpGet("{id}", Name = "GetReceiptRecognition")]
+    /// <summary>Get user receipt by ID.</summary>
+    [HttpGet("{id}", Name = "GetReceipt")]
     [Produces("application/json")]
     [ProducesResponseType(200)]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
-    public async Task<ActionResult<ReceiptRecognitionDto>> GetRecognition(Guid id,
+    public async Task<ActionResult<ReceiptDto>> GetReceipt(Guid id,
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
 
-        var result = await context.ReceiptRecognitions
+        var result = await context.Receipts
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.ReceiptRecognitionId == id && r.UserId == user.Id, cancellationToken);
+            .FirstOrDefaultAsync(r => r.ReceiptId == id && r.UserId == user.Id, cancellationToken);
         if (result is null)
             return NotFound();
 
-        return mapper.Map<ReceiptRecognitionDto>(result);
+        return mapper.Map<ReceiptDto>(result);
     }
 
     /// <summary>Get receipt recognition availability and image limits for the current user.</summary>
@@ -114,7 +114,7 @@ public class ReceiptRecognitionController(
     [Produces("application/json")]
     [ProducesResponseType(200)]
     [ProducesResponseType(401)]
-    public async Task<ActionResult<ReceiptRecognitionCapabilitiesDto>> GetCapabilities(
+    public async Task<ActionResult<ReceiptRecognitionCapabilitiesDto>> GetRecognitionCapabilities(
         CancellationToken cancellationToken = default)
     {
         var user = await userManager.GetUserAsync(User);
