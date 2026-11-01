@@ -36,46 +36,15 @@ public sealed class InvoiceDebtService(SplitzDbContext context) : IInvoiceDebtSe
                 netBalances[balance.UserId] = current + balance.Balance;
             }
 
-        // Split into creditors (positive) and debtors (negative)
-        var creditors = netBalances
-            .Where(kv => kv.Value > 0)
-            .OrderByDescending(kv => kv.Value)
-            .Select(kv => (UserId: kv.Key, Amount: kv.Value))
+        return DebtSimplifier.Simplify(netBalances)
+            .Select(debt => new InvoiceDebt
+            {
+                InvoiceId = invoiceId,
+                FromUserId = debt.FromUserId,
+                ToUserId = debt.ToUserId,
+                Amount = debt.Amount
+            })
             .ToList();
-
-        var debtors = netBalances
-            .Where(kv => kv.Value < 0)
-            .OrderBy(kv => kv.Value) // most negative first
-            .Select(kv => (UserId: kv.Key, Amount: -kv.Value)) // make positive
-            .ToList();
-
-        var debts = new List<InvoiceDebt>();
-        var ci = 0;
-        var di = 0;
-
-        while (ci < creditors.Count && di < debtors.Count)
-        {
-            var creditor = creditors[ci];
-            var debtor = debtors[di];
-            var transfer = Math.Min(creditor.Amount, debtor.Amount);
-
-            if (transfer > 0)
-                debts.Add(new InvoiceDebt
-                {
-                    InvoiceId = invoiceId,
-                    FromUserId = debtor.UserId,
-                    ToUserId = creditor.UserId,
-                    Amount = transfer
-                });
-
-            creditors[ci] = (creditor.UserId, creditor.Amount - transfer);
-            debtors[di] = (debtor.UserId, debtor.Amount - transfer);
-
-            if (creditors[ci].Amount == 0) ci++;
-            if (debtors[di].Amount == 0) di++;
-        }
-
-        return debts;
     }
 
     public bool CheckIfSettled(IEnumerable<InvoiceDebt> debts, IEnumerable<InvoiceSettlement> settlements)

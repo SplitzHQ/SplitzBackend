@@ -37,10 +37,10 @@ public class GroupController(
         var groups = await db.Groups
             .Where(g => g.Members.Contains(user))
             .Include(g => g.Members)
-            .Include(g => g.Balances)
+            .Include(g => g.Balances).ThenInclude(balance => balance.User)
             .OrderByDescending(g => g.LastActivityTime)
             .ToListAsync();
-        return mapper.Map<List<GroupDto>>(groups);
+        return mapper.Map<List<GroupDto>>(groups, options => options.State = user.Id);
     }
 
     /// <summary>
@@ -60,11 +60,11 @@ public class GroupController(
         var group = await db.Groups
             .Where(g => g.Members.Contains(user) && g.GroupId == groupId)
             .Include(g => g.Members)
-            .Include(g => g.Balances)
+            .Include(g => g.Balances).ThenInclude(balance => balance.User)
             .FirstOrDefaultAsync();
         if (group is null)
             return NotFound();
-        return mapper.Map<GroupDto>(group);
+        return mapper.Map<GroupDto>(group, options => options.State = user.Id);
     }
 
     /// <summary>
@@ -150,7 +150,8 @@ public class GroupController(
         await CreateInvitesAsync(group, user, groupInputDto.MembersId);
 
         await db.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
+        return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId },
+            mapper.Map<GroupDto>(group, options => options.State = user.Id));
     }
 
     /// <summary>
@@ -168,14 +169,17 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        var group = await db.Groups.Include(g => g.Members).FirstOrDefaultAsync(g => g.GroupId == groupId);
+        var group = await db.Groups.Include(g => g.Members)
+            .Include(g => g.Balances).ThenInclude(balance => balance.User)
+            .FirstOrDefaultAsync(g => g.GroupId == groupId);
         if (group is null)
             return NotFound();
         if (!group.Members.Contains(user))
             return Unauthorized();
         mapper.Map(groupInputDto, group);
         await db.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId }, mapper.Map<GroupDto>(group));
+        return CreatedAtAction(nameof(GetGroup), new { groupId = group.GroupId },
+            mapper.Map<GroupDto>(group, options => options.State = user.Id));
     }
 
     /// <summary>
@@ -350,7 +354,7 @@ public class GroupController(
 
         var invite = await db.GroupInvites
             .Include(i => i.Group).ThenInclude(g => g.Members)
-            .Include(i => i.Group).ThenInclude(g => g.Balances)
+            .Include(i => i.Group).ThenInclude(g => g.Balances).ThenInclude(balance => balance.User)
             .FirstOrDefaultAsync(i => i.GroupInviteId == inviteId && i.InvitedUserId == user.Id &&
                                       i.Status == RequestStatus.Pending);
         if (invite is null)
@@ -368,7 +372,7 @@ public class GroupController(
 
         await notifications.MarkNotificationsAsReadAsync(user.Id, NotificationTypes.GroupInvite, inviteId.ToString());
         await db.SaveChangesAsync();
-        return mapper.Map<GroupDto>(invite.Group);
+        return mapper.Map<GroupDto>(invite.Group, options => options.State = user.Id);
     }
 
     /// <summary>
@@ -520,7 +524,9 @@ public class GroupController(
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
-        var groupJoinLink = await db.GroupJoinLinks.Include(e => e.Group)
+        var groupJoinLink = await db.GroupJoinLinks
+            .Include(e => e.Group).ThenInclude(group => group.Members)
+            .Include(e => e.Group).ThenInclude(group => group.Balances).ThenInclude(balance => balance.User)
             .FirstOrDefaultAsync(e => e.GroupJoinLinkId == joinLinkId);
         if (groupJoinLink is null)
             return NotFound();
@@ -528,6 +534,6 @@ public class GroupController(
         groupJoinLink.Group.UpdateMembersIdHash();
         groupJoinLink.Group.LastActivityTime = DateTime.UtcNow;
         await db.SaveChangesAsync();
-        return mapper.Map<GroupDto>(groupJoinLink.Group);
+        return mapper.Map<GroupDto>(groupJoinLink.Group, options => options.State = user.Id);
     }
 }

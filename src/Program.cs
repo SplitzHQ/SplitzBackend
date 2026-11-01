@@ -173,6 +173,7 @@ public class Program
         builder.Services.AddSingleton<IImageProcessingService, NetVipsImageProcessingService>();
         builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
         builder.Services.AddScoped<IInvoiceDebtService, InvoiceDebtService>();
+        builder.Services.AddScoped<IGroupBalanceSummaryService, GroupBalanceSummaryService>();
         builder.Services.AddScoped<INotificationService, NotificationService>();
 
         // Shared provider configuration and per-user overrides for AI features.

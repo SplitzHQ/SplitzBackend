@@ -62,6 +62,9 @@ public class GroupDto
 
     public required List<GroupBalanceDto> Balances { get; set; } = new();
 
+    /// <summary>The current user's net balance and suggested payments, separated by currency.</summary>
+    public List<GroupBalanceSummaryDto> BalanceSummaries { get; set; } = new();
+
     /// <summary>
     ///     The number of transactions between the user and their friend.
     ///     This number is only for searching purposes and may not be accurate if transactions are deleted or modified.

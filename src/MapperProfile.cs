@@ -16,6 +16,7 @@ public class MapperProfile : Profile
 
         CreateMap<Friend, FriendDto>();
         CreateMap<Group, GroupDto>()
+            .ForMember(d => d.BalanceSummaries, opt => opt.MapFrom<GroupBalanceSummaryResolver>())
             .ForMember(d => d.Photo, opt => opt.MapFrom<PhotoResolver, string?>(s => s.Photo));
         CreateMap<Group, GroupReducedDto>()
             .ForMember(d => d.Photo, opt => opt.MapFrom<PhotoResolver, string?>(s => s.Photo));
@@ -51,6 +52,21 @@ public class MapperProfile : Profile
         CreateMap<TransactionBalanceInputDto, TransactionBalance>();
         CreateMap<TransactionDraftInputDto, TransactionDraft>();
         CreateMap<TransactionDraftBalanceInputDto, TransactionDraftBalance>();
+    }
+}
+
+/// <summary>Resolves group balance summaries for the user ID passed in the mapping operation's state.</summary>
+public sealed class GroupBalanceSummaryResolver(IGroupBalanceSummaryService balanceSummaries)
+    : IValueResolver<Group, GroupDto, List<GroupBalanceSummaryDto>>
+{
+    /// <inheritdoc />
+    public List<GroupBalanceSummaryDto> Resolve(Group source, GroupDto destination,
+        List<GroupBalanceSummaryDto> destMember, ResolutionContext context)
+    {
+        if (context.State is not string userId || string.IsNullOrWhiteSpace(userId))
+            throw new InvalidOperationException("Group mapping requires the current user ID in mapping state.");
+
+        return balanceSummaries.Summarize(source.Balances, userId);
     }
 }
 
