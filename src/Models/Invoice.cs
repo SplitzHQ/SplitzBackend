@@ -164,6 +164,7 @@ public class InvoiceInputDto
     public required List<Guid> TransactionIds { get; set; }
 }
 
+/// <summary>An invoice debt with payments in the same direction and the amount still owed.</summary>
 public class InvoiceDebtDto
 {
     public required Guid InvoiceId { get; set; }
@@ -173,6 +174,12 @@ public class InvoiceDebtDto
     public required SplitzUserReducedDto ToUser { get; set; }
 
     public required decimal Amount { get; set; }
+
+    /// <summary>Total payments from this debtor to this creditor, including any excess payment.</summary>
+    public required decimal Paid { get; set; }
+
+    /// <summary>Amount still owed. This value is never less than zero.</summary>
+    public required decimal Remaining { get; set; }
 }
 
 public class InvoiceSettlementDto

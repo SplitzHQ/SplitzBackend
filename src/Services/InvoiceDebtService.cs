@@ -11,6 +11,10 @@ public interface IInvoiceDebtService
     /// </summary>
     List<InvoiceDebt> SimplifyDebts(Guid invoiceId, List<Transaction> transactions);
 
+    /// <summary>Returns each debt with payments in the same direction and the amount still owed.</summary>
+    List<InvoiceDebtProgress> GetDebtProgress(IEnumerable<InvoiceDebt> debts,
+        IEnumerable<InvoiceSettlement> settlements);
+
     /// <summary>
     ///     Check if all debts are fully covered by settlements.
     /// </summary>
@@ -21,6 +25,9 @@ public interface IInvoiceDebtService
     /// </summary>
     Task RecalculateInvoiceDebtsAsync(Guid invoiceId);
 }
+
+/// <summary>A debt with the total paid and the amount still owed.</summary>
+public sealed record InvoiceDebtProgress(InvoiceDebt Debt, decimal Paid, decimal Remaining);
 
 public sealed class InvoiceDebtService(SplitzDbContext context) : IInvoiceDebtService
 {
@@ -47,9 +54,12 @@ public sealed class InvoiceDebtService(SplitzDbContext context) : IInvoiceDebtSe
             .ToList();
     }
 
-    public bool CheckIfSettled(IEnumerable<InvoiceDebt> debts, IEnumerable<InvoiceSettlement> settlements)
+    /// <inheritdoc />
+    public List<InvoiceDebtProgress> GetDebtProgress(IEnumerable<InvoiceDebt> debts,
+        IEnumerable<InvoiceSettlement> settlements)
     {
-        // Aggregate net settlement per (from, to) pair
+        // Reverse payments do not cover a debt. Match the ordered user pair.
+
         var settlementTotals = new Dictionary<(string From, string To), decimal>();
         foreach (var s in settlements)
         {
@@ -58,15 +68,17 @@ public sealed class InvoiceDebtService(SplitzDbContext context) : IInvoiceDebtSe
             settlementTotals[key] = current + s.Amount;
         }
 
-        foreach (var debt in debts)
+        return debts.Select(debt =>
         {
-            var key = (debt.FromUserId, debt.ToUserId);
-            settlementTotals.TryGetValue(key, out var settled);
-            if (settled < debt.Amount)
-                return false;
-        }
+            settlementTotals.TryGetValue((debt.FromUserId, debt.ToUserId), out var paid);
+            return new InvoiceDebtProgress(debt, paid, Math.Max(0m, debt.Amount - paid));
+        }).ToList();
+    }
 
-        return true;
+    /// <inheritdoc />
+    public bool CheckIfSettled(IEnumerable<InvoiceDebt> debts, IEnumerable<InvoiceSettlement> settlements)
+    {
+        return GetDebtProgress(debts, settlements).All(progress => progress.Remaining == 0m);
     }
 
     public async Task RecalculateInvoiceDebtsAsync(Guid invoiceId)

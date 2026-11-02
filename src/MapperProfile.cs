@@ -33,9 +33,12 @@ public class MapperProfile : Profile
 
         CreateMap<TransactionDraftBalance, TransactionDraftBalanceDto>();
 
-        CreateMap<Invoice, InvoiceDto>();
+        CreateMap<Invoice, InvoiceDto>()
+            .ForMember(d => d.Debts, opt => opt.MapFrom<InvoiceDebtProgressResolver>());
         CreateMap<Invoice, InvoiceReducedDto>();
-        CreateMap<InvoiceDebt, InvoiceDebtDto>();
+        CreateMap<InvoiceDebt, InvoiceDebtDto>()
+            .ForMember(d => d.Paid, opt => opt.Ignore())
+            .ForMember(d => d.Remaining, opt => opt.Ignore());
         CreateMap<InvoiceSettlement, InvoiceSettlementDto>();
         CreateMap<Notification, NotificationDto>()
             .ForMember(d => d.Data, opt => opt.MapFrom<NotificationDataResolver>());
@@ -52,6 +55,24 @@ public class MapperProfile : Profile
         CreateMap<TransactionBalanceInputDto, TransactionBalance>();
         CreateMap<TransactionDraftInputDto, TransactionDraft>();
         CreateMap<TransactionDraftBalanceInputDto, TransactionDraftBalance>();
+    }
+}
+
+/// <summary>Includes server-calculated payment progress in every full invoice response.</summary>
+public sealed class InvoiceDebtProgressResolver(IInvoiceDebtService invoiceDebts)
+    : IValueResolver<Invoice, InvoiceDto, List<InvoiceDebtDto>>
+{
+    /// <inheritdoc />
+    public List<InvoiceDebtDto> Resolve(Invoice source, InvoiceDto destination,
+        List<InvoiceDebtDto> destMember, ResolutionContext context)
+    {
+        return invoiceDebts.GetDebtProgress(source.Debts, source.Settlements).Select(progress =>
+        {
+            var debt = context.Mapper.Map<InvoiceDebtDto>(progress.Debt);
+            debt.Paid = progress.Paid;
+            debt.Remaining = progress.Remaining;
+            return debt;
+        }).ToList();
     }
 }
 
