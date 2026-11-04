@@ -73,6 +73,9 @@ public class TransactionController(
         if (group is null)
             return BadRequest("Group not found");
 
+        if (group.IsArchived)
+            return BadRequest(ArchiveRules.ArchivedGroupMessage);
+
         var transactionMembers = transaction.Balances.Select(b => b.UserId);
         if (transactionMembers.Any(id => !group.Members.Select(m => m.Id).Contains(id)))
             return BadRequest("Balance user not in group");
@@ -200,6 +203,9 @@ public class TransactionController(
         if (!transaction.Group.Members.Contains(user))
             return Unauthorized();
 
+        if (ArchiveRules.GetTransactionLockReason(transaction, transaction.Group) is { } lockReason)
+            return BadRequest(lockReason);
+
         var existingPhoto = transaction.Photo;
 
         await using var input = file.OpenReadStream();
@@ -249,6 +255,9 @@ public class TransactionController(
 
         if (!existingTransaction.Group.Members.Contains(user))
             return Unauthorized();
+
+        if (ArchiveRules.GetTransactionLockReason(existingTransaction, existingTransaction.Group) is { } lockReason)
+            return BadRequest(lockReason);
 
         if (existingTransaction.GroupId != transactionInputDto.GroupId)
             return BadRequest("Changing the group of a transaction is not allowed.");
@@ -330,6 +339,9 @@ public class TransactionController(
             .FirstOrDefaultAsync(g => g.GroupId == transaction.GroupId && g.Members.Contains(user), cancellationToken);
         if (group is null)
             return BadRequest("Group not found");
+
+        if (ArchiveRules.GetTransactionLockReason(transaction, group) is { } lockReason)
+            return BadRequest(lockReason);
 
         await using var dbTransaction = await context.Database.BeginTransactionAsync(cancellationToken);
 

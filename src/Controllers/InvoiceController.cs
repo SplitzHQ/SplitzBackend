@@ -21,18 +21,19 @@ public class InvoiceController(
     /// <summary>
     ///     List invoices for the current user's groups
     /// </summary>
+    /// <param name="includeArchived">Include archived invoices. Archived invoices are hidden by default.</param>
     [HttpGet(Name = "GetInvoices")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(200)]
-    public async Task<ActionResult<List<InvoiceReducedDto>>> GetInvoices()
+    public async Task<ActionResult<List<InvoiceReducedDto>>> GetInvoices(bool includeArchived = false)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
 
         var invoices = await context.Invoices
-            .Where(i => i.Group.Members.Contains(user))
+            .Where(i => i.Group.Members.Contains(user) && (includeArchived || !i.IsArchived))
             .OrderByDescending(i => i.CreateTime)
             .Include(i => i.CreatedBy)
             .ToListAsync();
@@ -90,6 +91,9 @@ public class InvoiceController(
             .FirstOrDefaultAsync(g => g.GroupId == input.GroupId && g.Members.Contains(user));
         if (group is null)
             return BadRequest("Group not found");
+
+        if (group.IsArchived)
+            return BadRequest(ArchiveRules.ArchivedGroupMessage);
 
         var transactions = await context.Transactions
             .Include(t => t.Balances)
@@ -196,6 +200,9 @@ public class InvoiceController(
         if (!invoice.Group.Members.Contains(user))
             return Unauthorized();
 
+        if (ArchiveRules.GetInvoiceLockReason(invoice) is { } lockReason)
+            return BadRequest(lockReason);
+
         if (invoice.GroupId != input.GroupId)
             return BadRequest("Changing the group of an invoice is not allowed");
 
@@ -273,6 +280,9 @@ public class InvoiceController(
         if (invoice.CreatedByUserId != user.Id)
             return BadRequest("Only the invoice creator can delete the invoice");
 
+        if (ArchiveRules.GetInvoiceLockReason(invoice) is { } lockReason)
+            return BadRequest(lockReason);
+
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
         // Unlink transactions
@@ -316,6 +326,9 @@ public class InvoiceController(
 
         if (!invoice.Group.Members.Contains(user))
             return Unauthorized();
+
+        if (ArchiveRules.GetInvoiceLockReason(invoice) is { } lockReason)
+            return BadRequest(lockReason);
 
         // Validate from/to users are involved in the invoice debts
         var involvedUserIds = invoice.Debts
@@ -425,6 +438,9 @@ public class InvoiceController(
         if (!invoice.Group.Members.Contains(user))
             return Unauthorized();
 
+        if (ArchiveRules.GetInvoiceLockReason(invoice) is { } lockReason)
+            return BadRequest(lockReason);
+
         var settlement = invoice.Settlements.FirstOrDefault(s => s.InvoiceSettlementId == settlementId);
         if (settlement is null)
             return NotFound();
@@ -442,4 +458,64 @@ public class InvoiceController(
         return NoContent();
     }
 
+    /// <summary>
+    ///     Archive a fully paid invoice. Its expenses are archived with it.
+    ///     Archived invoices are read-only and hidden from invoice lists by default.
+    /// </summary>
+    [HttpPost("{id}/archive", Name = "ArchiveInvoice")]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(204)]
+    public async Task<IActionResult> ArchiveInvoice(Guid id)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+
+        var invoice = await context.Invoices
+            .Include(i => i.Transactions)
+            .FirstOrDefaultAsync(i => i.InvoiceId == id && i.Group.Members.Contains(user));
+        if (invoice is null)
+            return NotFound();
+
+        if (invoice.IsArchived)
+            return NoContent();
+
+        if (invoice.Status != InvoiceStatus.Settled)
+            return BadRequest(ArchiveRules.InvoiceNotSettledMessage);
+
+        ArchiveRules.SetInvoiceArchived(invoice, true);
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Unarchive an invoice. Its expenses are unarchived with it.
+    /// </summary>
+    [HttpPost("{id}/unarchive", Name = "UnarchiveInvoice")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(204)]
+    public async Task<IActionResult> UnarchiveInvoice(Guid id)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+
+        var invoice = await context.Invoices
+            .Include(i => i.Transactions)
+            .FirstOrDefaultAsync(i => i.InvoiceId == id && i.Group.Members.Contains(user));
+        if (invoice is null)
+            return NotFound();
+
+        if (!invoice.IsArchived)
+            return NoContent();
+
+        ArchiveRules.SetInvoiceArchived(invoice, false);
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

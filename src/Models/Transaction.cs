@@ -48,12 +48,20 @@ public class Transaction : TransactionBase
 
     [MaxLength(256)] public string? Photo { get; set; }
 
+    /// <summary>
+    ///     True when the invoice that holds this expense is archived. The invoice sets and clears this value.
+    ///     An archived expense is read-only and hidden from lists by default.
+    /// </summary>
+    public bool IsArchived { get; set; }
+
     public List<TransactionBalance> Balances { get; set; } = new();
 }
 
 public class TransactionDto : TransactionBase
 {
     public Guid? InvoiceId { get; set; }
+
+    public required bool IsArchived { get; set; }
 
     [MaxLength(256)] public string? Photo { get; set; }
     public List<TransactionBalanceDto> Balances { get; set; } = new();
