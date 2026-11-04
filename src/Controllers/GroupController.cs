@@ -24,18 +24,19 @@ public class GroupController(
     /// <summary>
     ///     Get the current user's groups
     /// </summary>
+    /// <param name="includeArchived">Include archived groups. Archived groups are hidden by default.</param>
     /// <returns></returns>
     [HttpGet(Name = "GetGroups")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(200)]
-    public async Task<ActionResult<List<GroupDto>>> GetGroups()
+    public async Task<ActionResult<List<GroupDto>>> GetGroups(bool includeArchived = false)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
             return Unauthorized();
         var groups = await db.Groups
-            .Where(g => g.Members.Contains(user))
+            .Where(g => g.Members.Contains(user) && (includeArchived || !g.IsArchived))
             .Include(g => g.Members)
             .Include(g => g.Balances).ThenInclude(balance => balance.User)
             .OrderByDescending(g => g.LastActivityTime)
@@ -71,13 +72,15 @@ public class GroupController(
     ///     Get the group transactions
     /// </summary>
     /// <param name="groupId"></param>
+    /// <param name="includeArchived">Include archived expenses. Archived expenses are hidden by default.</param>
     /// <returns></returns>
     [HttpGet("{groupId}/transactions", Name = "GetGroupTransactions")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
     [ProducesResponseType(200)]
-    public async Task<ActionResult<List<TransactionDto>>> GetGroupTransactions(Guid groupId)
+    public async Task<ActionResult<List<TransactionDto>>> GetGroupTransactions(Guid groupId,
+        bool includeArchived = false)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
@@ -88,7 +91,7 @@ public class GroupController(
         if (group is null)
             return NotFound();
         var transactions = await db.Transactions
-            .Where(t => t.GroupId == groupId)
+            .Where(t => t.GroupId == groupId && (includeArchived || !t.IsArchived))
             .Include(t => t.Balances).ThenInclude(b => b.User)
             .ToListAsync();
         return mapper.Map<List<TransactionDto>>(transactions);
@@ -98,13 +101,15 @@ public class GroupController(
     ///     Get the group invoices
     /// </summary>
     /// <param name="groupId"></param>
+    /// <param name="includeArchived">Include archived invoices. Archived invoices are hidden by default.</param>
     /// <returns></returns>
     [HttpGet("{groupId}/invoices", Name = "GetGroupInvoices")]
     [Produces("application/json")]
     [ProducesResponseType(401)]
     [ProducesResponseType(404)]
     [ProducesResponseType(200)]
-    public async Task<ActionResult<List<InvoiceReducedDto>>> GetGroupInvoices(Guid groupId)
+    public async Task<ActionResult<List<InvoiceReducedDto>>> GetGroupInvoices(Guid groupId,
+        bool includeArchived = false)
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null)
@@ -115,7 +120,7 @@ public class GroupController(
         if (group is null)
             return NotFound();
         var invoices = await db.Invoices
-            .Where(i => i.GroupId == groupId)
+            .Where(i => i.GroupId == groupId && (includeArchived || !i.IsArchived))
             .OrderByDescending(i => i.CreateTime)
             .Include(i => i.CreatedBy)
             .ToListAsync();
@@ -255,6 +260,65 @@ public class GroupController(
         await db.SaveChangesAsync(cancellationToken);
 
         await imageStorage.DeleteIfOwnedAsync(groupPhoto, cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Archive a group. The group must have no unpaid expenses, so every expense must be in a settled invoice.
+    ///     Archived groups are hidden from the group list by default and do not accept new expenses or invoices.
+    /// </summary>
+    [HttpPost("{groupId}/archive", Name = "ArchiveGroup")]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(204)]
+    public async Task<IActionResult> ArchiveGroup(Guid groupId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+
+        var group = await db.Groups.FirstOrDefaultAsync(g => g.GroupId == groupId && g.Members.Contains(user));
+        if (group is null)
+            return NotFound();
+
+        if (group.IsArchived)
+            return NoContent();
+
+        var hasUnpaidExpenses = await db.Transactions
+            .Where(t => t.GroupId == groupId)
+            .AnyAsync(ArchiveRules.IsUnpaid);
+        if (hasUnpaidExpenses)
+            return BadRequest(ArchiveRules.GroupHasUnpaidExpensesMessage);
+
+        group.IsArchived = true;
+        group.ArchiveTime = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Unarchive a group.
+    /// </summary>
+    [HttpPost("{groupId}/unarchive", Name = "UnarchiveGroup")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType(204)]
+    public async Task<IActionResult> UnarchiveGroup(Guid groupId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+            return Unauthorized();
+
+        var group = await db.Groups.FirstOrDefaultAsync(g => g.GroupId == groupId && g.Members.Contains(user));
+        if (group is null)
+            return NotFound();
+
+        group.IsArchived = false;
+        group.ArchiveTime = null;
+        await db.SaveChangesAsync();
 
         return NoContent();
     }

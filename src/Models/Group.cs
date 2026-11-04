@@ -36,6 +36,15 @@ public class Group
     /// </summary>
     public required DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    ///     True when a member archived the group. Only a group with no unpaid expenses can be archived.
+    ///     An archived group is hidden from the group list by default and does not accept new expenses or invoices.
+    /// </summary>
+    public bool IsArchived { get; set; }
+
+    /// <summary>The time the group was archived. Null when the group is not archived.</summary>
+    public DateTime? ArchiveTime { get; set; }
+
     public void UpdateMembersIdHash()
     {
         // use xxhash3 to create membersIdHash
@@ -77,6 +86,10 @@ public class GroupDto
     ///     This is only for searching purposes and may not be accurate if transactions are deleted or modified.
     /// </summary>
     public required DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
+
+    public required bool IsArchived { get; set; }
+
+    public DateTime? ArchiveTime { get; set; }
 }
 
 public class GroupReducedDto

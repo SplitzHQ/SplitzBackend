@@ -38,6 +38,15 @@ public class Invoice
 
     public required InvoiceStatus Status { get; set; } = InvoiceStatus.Open;
 
+    /// <summary>
+    ///     True when a member archived the invoice. Only a settled invoice can be archived.
+    ///     An archived invoice and its expenses are read-only and hidden from lists by default.
+    /// </summary>
+    public bool IsArchived { get; set; }
+
+    /// <summary>The time the invoice was archived. Null when the invoice is not archived.</summary>
+    public DateTime? ArchiveTime { get; set; }
+
     public List<Transaction> Transactions { get; set; } = new();
 
     public List<InvoiceDebt> Debts { get; set; } = new();
@@ -119,6 +128,10 @@ public class InvoiceDto
 
     public required InvoiceStatus Status { get; set; }
 
+    public required bool IsArchived { get; set; }
+
+    public DateTime? ArchiveTime { get; set; }
+
     public List<TransactionDto> Transactions { get; set; } = new();
 
     public List<InvoiceDebtDto> Debts { get; set; } = new();
@@ -145,6 +158,10 @@ public class InvoiceReducedDto
     public required DateTime CreateTime { get; set; }
 
     public required InvoiceStatus Status { get; set; }
+
+    public required bool IsArchived { get; set; }
+
+    public DateTime? ArchiveTime { get; set; }
 }
 
 public class InvoiceInputDto

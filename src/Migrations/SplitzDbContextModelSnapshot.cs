@@ -15,7 +15,7 @@ namespace SplitzBackend.src.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("GroupSplitzUser", b =>
                 {
@@ -221,6 +221,12 @@ namespace SplitzBackend.src.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ArchiveTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastActivityTime")
                         .HasColumnType("TEXT");
 
@@ -328,6 +334,9 @@ namespace SplitzBackend.src.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ArchiveTime")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreateTime")
                         .HasColumnType("TEXT");
 
@@ -342,6 +351,9 @@ namespace SplitzBackend.src.Migrations
 
                     b.Property<Guid>("GroupId")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
@@ -740,6 +752,9 @@ namespace SplitzBackend.src.Migrations
 
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
